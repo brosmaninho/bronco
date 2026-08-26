@@ -1,0 +1,35 @@
+{
+    "target_locale": "pt-br",
+    "dictionary_path": "data/dictionaries",
+    "tessdata_path": "data/tessdata",
+    "ocr_language": "eng",
+    "cache_capacity": 5000,
+    "font_size": 16.0,
+    "toggle_hotkey": 119,
+    "ocr_confidence_threshold": 60.0,
+    "ocr_interval_ms": 500,
+    "overlay_enabled": true,
+    "ocr_regions": [
+        {
+            "label": "tooltip",
+            "x": 600,
+            "y": 300,
+            "width": 400,
+            "height": 300
+        },
+        {
+            "label": "npc_dialogue",
+            "x": 400,
+            "y": 700,
+            "width": 600,
+            "height": 150
+        },
+        {
+            "label": "skill_tooltip",
+            "x": 700,
+            "y": 850,
+            "width": 350,
+            "height": 200
+        }
+    ]
+}

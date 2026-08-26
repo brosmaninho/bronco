@@ -1,0 +1,22 @@
+{
+    "locale": "pt-br",
+    "category": "skills",
+    "version": "0.1.0",
+    "entries": [
+        { "en": "Fireball", "translated": "Bola de Fogo" },
+        { "en": "Lightning Strike", "translated": "Raio Elétrico" },
+        { "en": "Healing Spring", "translated": "Fonte de Cura" },
+        { "en": "Rapid Fire", "translated": "Tiro Rápido" },
+        { "en": "Whirlwind Attack", "translated": "Ataque de Redemoinho" },
+        { "en": "Dodge Roll", "translated": "Rolamento Evasivo" },
+        { "en": "Shield Bash", "translated": "Golpe de Escudo" },
+        { "en": "Shadow Step", "translated": "Passo das Sombras" },
+        { "en": "Meteor Shower", "translated": "Chuva de Meteoros" },
+        { "en": "Resurrection", "translated": "Ressurreição" },
+        { "en": "Banners of Strength", "translated": "Estandartes de Força" },
+        { "en": "Signet of Rage", "translated": "Selo da Fúria" },
+        { "en": "Healing Surge", "translated": "Onda de Cura" },
+        { "en": "Earthquake", "translated": "Terremoto" },
+        { "en": "Frost Bow", "translated": "Arco de Gelo" }
+    ]
+}

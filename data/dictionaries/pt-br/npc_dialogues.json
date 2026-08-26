@@ -1,0 +1,17 @@
+{
+    "locale": "pt-br",
+    "category": "npc_dialogues",
+    "version": "0.1.0",
+    "entries": [
+        { "en": "Welcome, adventurer! How can I help you?", "translated": "Bem-vindo, aventureiro! Como posso ajudá-lo?" },
+        { "en": "I have some tasks that need doing. Are you interested?", "translated": "Tenho algumas tarefas que precisam ser feitas. Você está interessado?" },
+        { "en": "The centaurs have been attacking our village. Please help us!", "translated": "Os centauros têm atacado nossa vila. Por favor, nos ajude!" },
+        { "en": "Would you like to buy something?", "translated": "Gostaria de comprar algo?" },
+        { "en": "Thank you for your help, hero!", "translated": "Obrigado pela sua ajuda, herói!" },
+        { "en": "The road ahead is dangerous. Be careful.", "translated": "O caminho à frente é perigoso. Tenha cuidado." },
+        { "en": "I can teach you new skills if you're ready.", "translated": "Posso te ensinar novas habilidades se você estiver pronto." },
+        { "en": "This area is under attack! Defend the settlement!", "translated": "Esta área está sob ataque! Defenda o assentamento!" },
+        { "en": "Speak with the captain for more information.", "translated": "Fale com o capitão para mais informações." },
+        { "en": "You have proven yourself worthy. Take this reward.", "translated": "Você provou ser digno. Pegue esta recompensa." }
+    ]
+}

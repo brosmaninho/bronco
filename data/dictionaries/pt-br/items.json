@@ -1,0 +1,22 @@
+{
+    "locale": "pt-br",
+    "category": "items",
+    "version": "0.1.0",
+    "entries": [
+        { "en": "Copper Ore", "translated": "Minério de Cobre" },
+        { "en": "Iron Ore", "translated": "Minério de Ferro" },
+        { "en": "Gold Ore", "translated": "Minério de Ouro" },
+        { "en": "Mithril Ore", "translated": "Minério de Mithril" },
+        { "en": "Orichalcum Ore", "translated": "Minério de Oricalco" },
+        { "en": "Copper Sword", "translated": "Espada de Cobre" },
+        { "en": "Iron Sword", "translated": "Espada de Ferro" },
+        { "en": "Steel Sword", "translated": "Espada de Aço" },
+        { "en": "Salvage Kit", "translated": "Kit de Salvamento" },
+        { "en": "Mystic Salvage Kit", "translated": "Kit de Salvamento Místico" },
+        { "en": "Minor Sigil of Force", "translated": "Sigilo Menor de Força" },
+        { "en": "Major Sigil of Force", "translated": "Sigilo Maior de Força" },
+        { "en": "Superior Sigil of Force", "translated": "Sigilo Superior de Força" },
+        { "en": "Healing Potion", "translated": "Poção de Cura" },
+        { "en": "Bag of Coins", "translated": "Bolsa de Moedas" }
+    ]
+}

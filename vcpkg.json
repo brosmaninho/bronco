@@ -1,0 +1,16 @@
+{
+  "name": "bronco",
+  "version-string": "0.1.0",
+  "description": "Guild Wars 2 translation overlay via DirectX 11 DLL proxy",
+  "homepage": "https://github.com/brosmaninho/bronco",
+  "dependencies": [
+    {
+      "name": "imgui",
+      "features": ["dx11-binding", "win32-binding"]
+    },
+    "tesseract",
+    "sqlite3",
+    "nlohmann-json"
+  ],
+  "builtin-baseline": "2024.01.12"
+}

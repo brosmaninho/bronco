@@ -1,3 +1,61 @@
-nimcache/
-nimblecache/
-htmldocs/
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.sln.docstates
+x64/
+x86/
+Debug/
+Release/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!CMakePresets.json
+!cmake/*.cmake
+
+# Compiled Objects
+*.obj
+*.o
+*.a
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.idb
+
+# Executables and DLLs
+*.exe
+*.dll
+*.so
+*.dylib
+
+# vcpkg
+vcpkg_installed/
+vcpkg-manifest-install.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Tesseract data (downloaded separately)
+data/tessdata/
+
+# User-specific config overrides
+config/bronco_config.local.json
