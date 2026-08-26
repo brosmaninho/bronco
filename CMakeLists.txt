@@ -6,6 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Use dynamic CRT (/MD) - required for x64-windows-static-md triplet consistency.
+# All vcpkg libraries are linked statically, but CRT remains dynamic.
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL" CACHE STRING "MSVC runtime library")
+
 # Output DLL name as d3d11.dll
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
 

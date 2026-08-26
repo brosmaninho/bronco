@@ -1,6 +1,9 @@
 # Main d3d11.dll proxy - must be ultra-lightweight at load time.
 # Heavy dependencies (Tesseract, sqlite3) live in bronco_ocr.dll and are loaded
 # at runtime via LoadLibrary when the pipeline worker thread needs OCR.
+#
+# With x64-windows-static-md triplet, all vcpkg libraries (imgui, nlohmann-json)
+# are linked statically into this DLL. Only Windows system DLLs are needed at runtime.
 
 set(BRONCO_SOURCES
     dllmain.cpp
@@ -19,10 +22,11 @@ add_library(d3d11 SHARED
     bronco.rc
 )
 
-# Set output name to d3d11 (produces d3d11.dll)
+# Ensure dynamic CRT (/MD) - consistent with x64-windows-static-md triplet
 set_target_properties(d3d11 PROPERTIES
     OUTPUT_NAME "d3d11"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    MSVC_RUNTIME_LIBRARY "MultiThreadedDLL"
 )
 
 # Include directories
@@ -32,6 +36,7 @@ target_include_directories(d3d11 PRIVATE
 
 # Link ONLY lightweight/system dependencies.
 # NO Tesseract, NO sqlite3 - those are in bronco_ocr.dll loaded at runtime.
+# imgui and nlohmann-json are linked statically (embedded in this DLL).
 target_link_libraries(d3d11 PRIVATE
     imgui::imgui
     nlohmann_json::nlohmann_json

@@ -4,25 +4,27 @@
     {
       "name": "windows-msvc",
       "displayName": "Windows MSVC (Release)",
-      "description": "Build with Visual Studio 2022 MSVC toolchain + vcpkg",
+      "description": "Build with Visual Studio 2022 MSVC toolchain + vcpkg (static libs, dynamic CRT)",
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
       }
     },
     {
       "name": "windows-msvc-debug",
       "displayName": "Windows MSVC (Debug)",
-      "description": "Debug build with Visual Studio 2022 MSVC toolchain + vcpkg",
+      "description": "Debug build with Visual Studio 2022 MSVC toolchain + vcpkg (static libs, dynamic CRT)",
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
       }
     }
   ],

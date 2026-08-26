@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Switch all vcpkg dependencies to static linking via x64-windows-static-md triplet. This embeds imgui, tesseract, sqlite3, leptonica, and nlohmann-json directly into the output DLLs, eliminating external DLL dependencies.",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Update vcpkg.json to set default triplet to x64-windows-static-md via vcpkg-configuration or overrides.",
+    "STEP 2 - Update CMakePresets.json to add VCPKG_TARGET_TRIPLET=x64-windows-static-md cache variable in both presets.",
+    "STEP 3 - Update .github/workflows/build-release.yml to use VCPKG_DEFAULT_TRIPLET: x64-windows-static-md and pass -DVCPKG_TARGET_TRIPLET=x64-windows-static-md to cmake configure.",
+    "STEP 4 - Update CMakeLists.txt (root) to set CMAKE_MSVC_RUNTIME_LIBRARY to MultiThreadedDLL.",
+    "STEP 5 - Update src/CMakeLists.txt to ensure /MD runtime and static system lib linkage.",
+    "STEP 6 - Update src/ocr/CMakeLists.txt to ensure /MD runtime and static system lib linkage."
+  ],
+  "acceptance_criteria": [
+    "vcpkg.json references x64-windows-static-md as the default triplet",
+    "CMakePresets.json has VCPKG_TARGET_TRIPLET set in both presets",
+    "CI workflow uses x64-windows-static-md triplet in env and cmake command",
+    "Both DLL targets set CMAKE_MSVC_RUNTIME_LIBRARY to MultiThreadedDLL",
+    "No external DLL dependencies beyond Windows system DLLs are needed"
+  ],
+  "verification": [
+    "Validate YAML syntax of build-release.yml",
+    "Validate JSON syntax of vcpkg.json and CMakePresets.json",
+    "Verify triplet string appears consistently across all modified files"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

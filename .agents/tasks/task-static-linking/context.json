@@ -1,0 +1,23 @@
+{
+  "project_type": "C++20 Windows DLL proxy (d3d11.dll) for Guild Wars 2 translation overlay",
+  "language": "C++ (source), PowerShell (installer), YAML (CI)",
+  "build_system": "CMake 3.21+ with vcpkg and MSVC (Visual Studio 2022). CMakePresets.json defines windows-msvc preset.",
+  "test_framework": "None",
+  "build_command": "Cannot build on Linux host (requires MSVC + vcpkg on Windows). Validate via static analysis of code structure and CMake syntax.",
+  "test_command": "N/A - no tests exist",
+  "verification_instructions": "Verify YAML syntax, CMake syntax, and that triplet x64-windows-static-md is consistently set in all relevant files.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "Windows-only project. Requires: Visual Studio 2022, vcpkg, CMake 3.21+.",
+  "environment_constraints": "Linux sandbox - cannot compile Windows DLL. Validation limited to syntax checking and structural verification.",
+  "contribution_requirements": "C++20 style, bronco:: namespace. README in Portuguese (Brazilian).",
+  "key_patterns": "x64-windows-static-md links all vcpkg deps statically (as .lib) but keeps CRT dynamic (/MD). This means our DLLs embed all third-party code with no external DLL dependencies.",
+  "relevant_files": [
+    "vcpkg.json",
+    "CMakePresets.json",
+    ".github/workflows/build-release.yml",
+    "src/CMakeLists.txt",
+    "src/ocr/CMakeLists.txt",
+    "CMakeLists.txt"
+  ],
+  "directory_structure": "Root: CMakeLists.txt, vcpkg.json, CMakePresets.json. src/: C++ sources. .github/workflows/: CI."
+}

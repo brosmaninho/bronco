@@ -114,10 +114,10 @@ $env:VCPKG_ROOT = "C:\vcpkg"
 ### 2. Instalar dependencias
 
 ```powershell
-vcpkg install imgui[dx11-binding,win32-binding]:x64-windows
-vcpkg install tesseract:x64-windows
-vcpkg install sqlite3:x64-windows
-vcpkg install nlohmann-json:x64-windows
+vcpkg install imgui[dx11-binding,win32-binding]:x64-windows-static-md
+vcpkg install tesseract:x64-windows-static-md
+vcpkg install sqlite3:x64-windows-static-md
+vcpkg install nlohmann-json:x64-windows-static-md
 ```
 
 ### 3. Compilar o projeto

@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      VCPKG_DEFAULT_TRIPLET: x64-windows
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
 
     steps:
       - name: Checkout
@@ -32,7 +32,7 @@ jobs:
         shell: pwsh
 
       - name: Configure CMake
-        run: cmake -B build/release -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -A x64
+        run: cmake -B build/release -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static-md -A x64
         shell: pwsh
 
       - name: Build Release
