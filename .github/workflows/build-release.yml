@@ -1,0 +1,106 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows x64
+    runs-on: windows-latest
+
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Export GitHub Actions cache variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '2024.09.30'
+
+      - name: Configure CMake
+        run: cmake --preset windows-msvc
+
+      - name: Build
+        run: cmake --build build/windows-msvc --config Release
+
+      - name: Download Tesseract trained data
+        run: |
+          New-Item -ItemType Directory -Force -Path "staging/data/tessdata"
+          Invoke-WebRequest -Uri "https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata" -OutFile "staging/data/tessdata/eng.traineddata"
+        shell: pwsh
+
+      - name: Get version from tag
+        id: version
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          echo "TAG=${{ github.ref_name }}" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Package release
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $releaseDir = "bronco-v${version}-win64"
+
+          # Create release directory structure
+          New-Item -ItemType Directory -Force -Path "$releaseDir/config"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/dictionaries/pt-br"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/tessdata"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/scripts"
+
+          # Copy DLL
+          Copy-Item "build/windows-msvc/bin/Release/d3d11.dll" "$releaseDir/"
+
+          # Copy config
+          Copy-Item "config/bronco_config.json" "$releaseDir/config/"
+
+          # Copy dictionaries
+          Copy-Item "data/dictionaries/pt-br/*.json" "$releaseDir/data/dictionaries/pt-br/"
+
+          # Copy tessdata
+          Copy-Item "staging/data/tessdata/eng.traineddata" "$releaseDir/data/tessdata/"
+
+          # Copy scripts
+          Copy-Item "scripts/install.ps1" "$releaseDir/scripts/"
+          Copy-Item "scripts/uninstall.ps1" "$releaseDir/scripts/"
+
+          # Copy install readme
+          Copy-Item "docs/INSTALL.md" "$releaseDir/README_INSTALL.md"
+
+          # Create ZIP
+          Compress-Archive -Path "$releaseDir" -DestinationPath "bronco-v${version}-win64.zip"
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Bronco ${{ steps.version.outputs.TAG }}"
+          body: |
+            ## Bronco ${{ steps.version.outputs.TAG }}
+
+            ### Instalacao Rapida
+
+            1. Baixe o arquivo `bronco-v${{ steps.version.outputs.VERSION }}-win64.zip`
+            2. Extraia o ZIP em qualquer pasta
+            3. Execute `scripts/install.ps1` (clique com botao direito > Executar com PowerShell)
+
+            Para mais detalhes, veja o arquivo `README_INSTALL.md` dentro do ZIP.
+          files: "bronco-v${{ steps.version.outputs.VERSION }}-win64.zip"
+          draft: false
+          prerelease: false

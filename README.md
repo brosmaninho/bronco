@@ -69,6 +69,23 @@ como arcdps, ReShade e Nexus/Raidcore.
 - [vcpkg](https://github.com/microsoft/vcpkg)
 - CMake 3.21+
 
+## Instalacao Rapida (Recomendado)
+
+A maneira mais simples de instalar o Bronco:
+
+1. Baixe o ZIP da [pagina de Releases](https://github.com/brosmaninho/bronco/releases)
+2. Extraia em qualquer pasta
+3. Execute o instalador:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+```
+
+O instalador detecta automaticamente a pasta do Guild Wars 2, copia todos os
+arquivos necessarios e configura o idioma de traducao.
+
+Para instrucoes detalhadas, veja [docs/INSTALL.md](docs/INSTALL.md).
+
 ## Dependencias
 
 Gerenciadas via vcpkg:
@@ -125,9 +142,11 @@ cmake --preset windows-msvc-debug
 cmake --build build/windows-msvc-debug --config Debug
 ```
 
-## Instalacao
+## Instalacao Manual
 
-1. Compile o projeto (ou baixe a release)
+Se preferir instalar manualmente:
+
+1. Compile o projeto (veja secao Build acima) ou baixe a release
 2. Copie os seguintes arquivos para a pasta do Guild Wars 2
    (normalmente `C:\Program Files\Guild Wars 2\`):
 
