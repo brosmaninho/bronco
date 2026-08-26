@@ -1,8 +1,14 @@
 {
   "task_id": "task-static-linking",
   "task_description": "Switch vcpkg triplet from x64-windows to x64-windows-static-md so all third-party libraries (imgui, tesseract, sqlite3, leptonica, nlohmann-json) are statically embedded into our DLLs. This eliminates the need for any extra DLLs beyond d3d11.dll and bronco_ocr.dll.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001"],
   "blocked_reason": null,
-  "verification": null
+  "verification": {
+    "build": "skipped",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "Cannot build on Linux host (requires MSVC + vcpkg on Windows). Validated via YAML/JSON syntax checking and consistency verification of triplet string across all files."
+  }
 }
