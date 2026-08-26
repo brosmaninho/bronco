@@ -15,6 +15,10 @@ void shutdown();
 /// Get a pointer to an original exported function by name.
 FARPROC getOriginalFunction(const char* name);
 
+/// Get the HMODULE of our proxy DLL (passed from DllMain).
+/// Useful for resolving paths relative to the DLL's own directory.
+HMODULE getOurModule();
+
 } // namespace bronco::proxy
 
 // All forwarded DLL exports must be at global scope (no namespace) for the .def file

@@ -176,11 +176,13 @@ Write-Host ""
 
 # --- Passo 2: Verificar se o Bronco esta instalado ---
 $dllPath = Join-Path $gw2Path "d3d11.dll"
+$ocrDllPath = Join-Path $gw2Path "bronco_ocr.dll"
 $configPath = Join-Path $gw2Path "config"
 $dataPath = Join-Path $gw2Path "data"
 
 $broncoFound = $false
 if (Test-Path $dllPath) { $broncoFound = $true }
+if (Test-Path $ocrDllPath) { $broncoFound = $true }
 if (Test-Path $configPath) { $broncoFound = $true }
 if (Test-Path $dataPath) { $broncoFound = $true }
 
@@ -201,6 +203,7 @@ Write-Host ""
 Write-Warning-Message "Os seguintes arquivos serao removidos de: $gw2Path"
 Write-Host ""
 if (Test-Path $dllPath) { Write-Host "  - d3d11.dll" }
+if (Test-Path $ocrDllPath) { Write-Host "  - bronco_ocr.dll" }
 if (Test-Path $configPath) { Write-Host "  - config/ (pasta completa)" }
 if (Test-Path $dataPath) { Write-Host "  - data/ (pasta completa)" }
 Write-Host ""
@@ -262,6 +265,18 @@ if (Test-Path $dllPath) {
     catch {
         $errors += "d3d11.dll: $($_.Exception.Message)"
         Write-Error-Message "Falha ao remover d3d11.dll: $($_.Exception.Message)"
+    }
+}
+
+# Remover bronco_ocr.dll
+if (Test-Path $ocrDllPath) {
+    try {
+        Remove-Item -Path $ocrDllPath -Force
+        Write-Host "  Removido: bronco_ocr.dll" -ForegroundColor Green
+    }
+    catch {
+        $errors += "bronco_ocr.dll: $($_.Exception.Message)"
+        Write-Error-Message "Falha ao remover bronco_ocr.dll: $($_.Exception.Message)"
     }
 }
 

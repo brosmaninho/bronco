@@ -1,6 +1,8 @@
 #include "ocr_loader.h"
+#include "../proxy/d3d11_proxy.h"
 
 #include <Windows.h>
+#include <string>
 
 namespace bronco::ocr {
 
@@ -15,8 +17,40 @@ bool OcrLoader::loadDll()
 {
     if (m_dllHandle) return true;
 
-    // Try to load bronco_ocr.dll from the same directory as d3d11.dll (the game folder)
-    m_dllHandle = LoadLibraryW(L"bronco_ocr.dll");
+    // Resolve the path to bronco_ocr.dll relative to our proxy DLL's directory.
+    // This avoids relying on the process working directory, which may differ
+    // when GW2 is launched from an external launcher.
+    std::wstring dllPath;
+    HMODULE ourModule = bronco::proxy::getOurModule();
+    if (ourModule)
+    {
+        wchar_t modulePath[MAX_PATH] = {};
+        DWORD len = GetModuleFileNameW(ourModule, modulePath, MAX_PATH);
+        if (len > 0 && len < MAX_PATH)
+        {
+            // Find the last backslash to get the directory
+            std::wstring dir(modulePath, len);
+            auto pos = dir.find_last_of(L'\\');
+            if (pos != std::wstring::npos)
+            {
+                dir = dir.substr(0, pos + 1);
+            }
+            dllPath = dir + L"bronco_ocr.dll";
+        }
+    }
+
+    // Attempt to load from the resolved path, fall back to bare name if resolution failed
+    if (!dllPath.empty())
+    {
+        m_dllHandle = LoadLibraryW(dllPath.c_str());
+    }
+
+    if (!m_dllHandle)
+    {
+        // Fallback: rely on standard DLL search order
+        m_dllHandle = LoadLibraryW(L"bronco_ocr.dll");
+    }
+
     if (!m_dllHandle)
     {
         OutputDebugStringA("[Bronco] OcrLoader: Failed to load bronco_ocr.dll\n");

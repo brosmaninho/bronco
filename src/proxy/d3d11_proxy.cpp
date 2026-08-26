@@ -207,6 +207,11 @@ FARPROC getOriginalFunction(const char* name)
     return GetProcAddress(g_realD3D11, name);
 }
 
+HMODULE getOurModule()
+{
+    return g_ourModule;
+}
+
 } // namespace bronco::proxy
 
 // --- Global hook state ---
@@ -247,8 +252,13 @@ namespace {
         ATOM classAtom = RegisterClassExW(&wc);
         if (!classAtom)
         {
-            factory->Release();
-            return;
+            // If the class already exists (e.g., from a previous partial attempt),
+            // proceed -- we can still use the class name to create the window.
+            if (GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
+            {
+                factory->Release();
+                return;
+            }
         }
 
         // Create a hidden 1x1 window
@@ -356,9 +366,10 @@ HRESULT WINAPI proxied_D3D11CreateDeviceAndSwapChain(
         ppDevice, pFeatureLevel, ppImmediateContext);
 
     // If swap chain was created, hook Present()
-    if (SUCCEEDED(hr) && ppSwapChain && *ppSwapChain)
+    if (SUCCEEDED(hr) && ppSwapChain && *ppSwapChain && !g_presentHooked.load())
     {
         bronco::hook::hookSwapChain(*ppSwapChain);
+        g_presentHooked.store(true);
     }
 
     return hr;
