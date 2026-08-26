@@ -1,4 +1,5 @@
 #include "imgui_overlay.h"
+#include "../config/config.h"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -15,7 +16,7 @@ namespace bronco::overlay {
 namespace {
     // State
     std::atomic<bool> g_initialized{false};
-    std::atomic<bool> g_visible{true};
+    std::atomic<int> g_visible{1}; // Use int for fetch_xor atomicity
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
 
@@ -28,12 +29,23 @@ namespace {
     HWND g_hwnd = nullptr;
     WNDPROC g_originalWndProc = nullptr;
 
-    // Our window procedure that intercepts input for ImGui
+    // Our window procedure that intercepts input for ImGui and handles hotkeys
     LRESULT WINAPI hookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        // Let ImGui handle input first
+        // Check for toggle hotkey (configured key, default VK_F8)
+        if (msg == WM_KEYDOWN)
+        {
+            int hotkey = bronco::Config::instance().toggleHotkey();
+            if (static_cast<int>(wParam) == hotkey)
+            {
+                toggleVisibility();
+                return 0; // Consume the key
+            }
+        }
+
+        // Let ImGui handle input
         if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-            return true;
+            return 0;
 
         return CallWindowProcW(g_originalWndProc, hWnd, msg, wParam, lParam);
     }
@@ -96,11 +108,13 @@ void render(IDXGISwapChain* swapChain)
 {
     if (!g_initialized.load() || !g_visible.load()) return;
 
-    // Ensure render target exists
+    // Ensure render target exists (recreated after ResizeBuffers invalidation)
     if (!g_renderTargetView)
     {
         createRenderTarget(swapChain);
     }
+
+    if (!g_renderTargetView) return;
 
     // Start new ImGui frame
     ImGui_ImplDX11_NewFrame();
@@ -176,6 +190,11 @@ void shutdown()
     OutputDebugStringA("[Bronco] ImGui overlay shut down\n");
 }
 
+void invalidateRenderTarget()
+{
+    cleanupRenderTarget();
+}
+
 void setTranslations(const std::vector<TranslatedEntry>& entries)
 {
     std::lock_guard<std::mutex> lock(g_translationMutex);
@@ -184,12 +203,13 @@ void setTranslations(const std::vector<TranslatedEntry>& entries)
 
 void toggleVisibility()
 {
-    g_visible.store(!g_visible.load());
+    // Atomic toggle using fetch_xor - no TOCTOU race
+    g_visible.fetch_xor(1);
 }
 
 bool isVisible()
 {
-    return g_visible.load();
+    return g_visible.load() != 0;
 }
 
 } // namespace bronco::overlay

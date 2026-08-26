@@ -5,15 +5,21 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <mutex>
+#include <shared_mutex>
 
 namespace bronco {
 
 /// Application configuration loaded from config/bronco_config.json.
-/// Singleton pattern for global access.
+/// Singleton pattern for global access. Thread-safe via shared_mutex.
 class Config {
 public:
     /// Get the singleton instance.
     static Config& instance();
+
+    /// Ensure the config is loaded (deferred from DllMain to avoid loader lock).
+    /// Safe to call multiple times; loads only once.
+    void ensureLoaded();
 
     /// Load configuration from the default path (config/bronco_config.json).
     /// @return true if loaded successfully
@@ -25,31 +31,31 @@ public:
 
     /// Save current configuration to the file it was loaded from.
     /// @return true if saved successfully
-    bool save() const;
+    bool save();
 
-    // --- Getters ---
+    // --- Getters (thread-safe reads) ---
 
-    const std::string& targetLocale() const { return m_targetLocale; }
-    const std::string& dictionaryPath() const { return m_dictionaryPath; }
-    const std::string& tessDataPath() const { return m_tessDataPath; }
-    const std::string& ocrLanguage() const { return m_ocrLanguage; }
-    std::size_t cacheCapacity() const { return m_cacheCapacity; }
-    float fontSize() const { return m_fontSize; }
-    int toggleHotkey() const { return m_toggleHotkey; }
-    float ocrConfidenceThreshold() const { return m_ocrConfidenceThreshold; }
-    int ocrIntervalMs() const { return m_ocrIntervalMs; }
-    bool overlayEnabled() const { return m_overlayEnabled; }
-    const std::vector<bronco::ocr::ScreenRegion>& ocrRegions() const { return m_ocrRegions; }
+    std::string targetLocale() const;
+    std::string dictionaryPath() const;
+    std::string tessDataPath() const;
+    std::string ocrLanguage() const;
+    std::size_t cacheCapacity() const;
+    float fontSize() const;
+    int toggleHotkey() const;
+    float ocrConfidenceThreshold() const;
+    int ocrIntervalMs() const;
+    bool overlayEnabled() const;
+    std::vector<bronco::ocr::ScreenRegion> ocrRegions() const;
 
-    // --- Setters ---
+    // --- Setters (thread-safe writes) ---
 
-    void setTargetLocale(const std::string& locale) { m_targetLocale = locale; }
-    void setFontSize(float size) { m_fontSize = size; }
-    void setToggleHotkey(int vkey) { m_toggleHotkey = vkey; }
-    void setCacheCapacity(std::size_t capacity) { m_cacheCapacity = capacity; }
-    void setOcrConfidenceThreshold(float threshold) { m_ocrConfidenceThreshold = threshold; }
-    void setOcrIntervalMs(int ms) { m_ocrIntervalMs = ms; }
-    void setOverlayEnabled(bool enabled) { m_overlayEnabled = enabled; }
+    void setTargetLocale(const std::string& locale);
+    void setFontSize(float size);
+    void setToggleHotkey(int vkey);
+    void setCacheCapacity(std::size_t capacity);
+    void setOcrConfidenceThreshold(float threshold);
+    void setOcrIntervalMs(int ms);
+    void setOverlayEnabled(bool enabled);
 
 private:
     Config() = default;
@@ -57,9 +63,14 @@ private:
     Config(const Config&) = delete;
     Config& operator=(const Config&) = delete;
 
+    /// Internal load (caller must hold write lock).
+    bool loadInternal(const std::filesystem::path& configPath);
+
+    mutable std::shared_mutex m_mutex;
+    bool m_loaded = false;
     std::filesystem::path m_configPath;
 
-    // Settings
+    // Settings (protected by m_mutex)
     std::string m_targetLocale = "pt-br";
     std::string m_dictionaryPath = "data/dictionaries";
     std::string m_tessDataPath = "data/tessdata";

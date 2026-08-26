@@ -11,8 +11,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hModule);
 
-        // Load configuration
-        bronco::Config::instance().load();
+        // NOTE: Config loading is deferred to first Present() call to avoid
+        // filesystem I/O under the Windows loader lock (deadlock risk).
+        // See Config::ensureLoaded() called from hookedPresent().
 
         // Initialize the D3D11 proxy (loads real d3d11.dll from System32)
         if (!bronco::proxy::initialize(hModule))

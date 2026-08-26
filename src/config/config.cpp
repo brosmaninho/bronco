@@ -11,14 +11,204 @@ Config& Config::instance()
     return s_instance;
 }
 
+void Config::ensureLoaded()
+{
+    // Fast path: already loaded (read lock only)
+    {
+        std::shared_lock<std::shared_mutex> readLock(m_mutex);
+        if (m_loaded) return;
+    }
+
+    // Slow path: acquire write lock and load
+    std::unique_lock<std::shared_mutex> writeLock(m_mutex);
+    if (m_loaded) return; // Double-check after acquiring write lock
+
+    // Do not hold the result - best effort load
+    loadInternal("config/bronco_config.json");
+    m_loaded = true;
+}
+
 bool Config::load()
 {
-    // Determine the config path relative to the DLL location
-    // When placed in the GW2 folder, config/ is a sibling directory
-    return load("config/bronco_config.json");
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    bool result = loadInternal("config/bronco_config.json");
+    m_loaded = true;
+    return result;
 }
 
 bool Config::load(const std::filesystem::path& configPath)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    bool result = loadInternal(configPath);
+    m_loaded = true;
+    return result;
+}
+
+bool Config::save()
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    try
+    {
+        nlohmann::json json;
+        json["target_locale"] = m_targetLocale;
+        json["dictionary_path"] = m_dictionaryPath;
+        json["tessdata_path"] = m_tessDataPath;
+        json["ocr_language"] = m_ocrLanguage;
+        json["cache_capacity"] = m_cacheCapacity;
+        json["font_size"] = m_fontSize;
+        json["toggle_hotkey"] = m_toggleHotkey;
+        json["ocr_confidence_threshold"] = m_ocrConfidenceThreshold;
+        json["ocr_interval_ms"] = m_ocrIntervalMs;
+        json["overlay_enabled"] = m_overlayEnabled;
+
+        // Save OCR regions
+        nlohmann::json regions = nlohmann::json::array();
+        for (const auto& r : m_ocrRegions)
+        {
+            nlohmann::json region;
+            region["x"] = r.x;
+            region["y"] = r.y;
+            region["width"] = r.width;
+            region["height"] = r.height;
+            region["label"] = r.label;
+            regions.push_back(region);
+        }
+        json["ocr_regions"] = regions;
+
+        // Ensure directory exists
+        if (m_configPath.has_parent_path())
+        {
+            std::filesystem::create_directories(m_configPath.parent_path());
+        }
+
+        std::ofstream file(m_configPath);
+        if (!file.is_open()) return false;
+
+        file << json.dump(4);
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
+// --- Thread-safe getters ---
+
+std::string Config::targetLocale() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_targetLocale;
+}
+
+std::string Config::dictionaryPath() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_dictionaryPath;
+}
+
+std::string Config::tessDataPath() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_tessDataPath;
+}
+
+std::string Config::ocrLanguage() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrLanguage;
+}
+
+std::size_t Config::cacheCapacity() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_cacheCapacity;
+}
+
+float Config::fontSize() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_fontSize;
+}
+
+int Config::toggleHotkey() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_toggleHotkey;
+}
+
+float Config::ocrConfidenceThreshold() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrConfidenceThreshold;
+}
+
+int Config::ocrIntervalMs() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrIntervalMs;
+}
+
+bool Config::overlayEnabled() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_overlayEnabled;
+}
+
+std::vector<bronco::ocr::ScreenRegion> Config::ocrRegions() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrRegions;
+}
+
+// --- Thread-safe setters ---
+
+void Config::setTargetLocale(const std::string& locale)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_targetLocale = locale;
+}
+
+void Config::setFontSize(float size)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_fontSize = size;
+}
+
+void Config::setToggleHotkey(int vkey)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_toggleHotkey = vkey;
+}
+
+void Config::setCacheCapacity(std::size_t capacity)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_cacheCapacity = capacity;
+}
+
+void Config::setOcrConfidenceThreshold(float threshold)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_ocrConfidenceThreshold = threshold;
+}
+
+void Config::setOcrIntervalMs(int ms)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_ocrIntervalMs = ms;
+}
+
+void Config::setOverlayEnabled(bool enabled)
+{
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_overlayEnabled = enabled;
+}
+
+// --- Private implementation ---
+
+bool Config::loadInternal(const std::filesystem::path& configPath)
 {
     m_configPath = configPath;
 
@@ -90,54 +280,6 @@ bool Config::load(const std::filesystem::path& configPath)
         msg += e.what();
         msg += "\n";
         OutputDebugStringA(msg.c_str());
-        return false;
-    }
-}
-
-bool Config::save() const
-{
-    try
-    {
-        nlohmann::json json;
-        json["target_locale"] = m_targetLocale;
-        json["dictionary_path"] = m_dictionaryPath;
-        json["tessdata_path"] = m_tessDataPath;
-        json["ocr_language"] = m_ocrLanguage;
-        json["cache_capacity"] = m_cacheCapacity;
-        json["font_size"] = m_fontSize;
-        json["toggle_hotkey"] = m_toggleHotkey;
-        json["ocr_confidence_threshold"] = m_ocrConfidenceThreshold;
-        json["ocr_interval_ms"] = m_ocrIntervalMs;
-        json["overlay_enabled"] = m_overlayEnabled;
-
-        // Save OCR regions
-        nlohmann::json regions = nlohmann::json::array();
-        for (const auto& r : m_ocrRegions)
-        {
-            nlohmann::json region;
-            region["x"] = r.x;
-            region["y"] = r.y;
-            region["width"] = r.width;
-            region["height"] = r.height;
-            region["label"] = r.label;
-            regions.push_back(region);
-        }
-        json["ocr_regions"] = regions;
-
-        // Ensure directory exists
-        if (m_configPath.has_parent_path())
-        {
-            std::filesystem::create_directories(m_configPath.parent_path());
-        }
-
-        std::ofstream file(m_configPath);
-        if (!file.is_open()) return false;
-
-        file << json.dump(4);
-        return true;
-    }
-    catch (const std::exception&)
-    {
         return false;
     }
 }

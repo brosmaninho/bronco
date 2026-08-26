@@ -32,6 +32,9 @@ void render(IDXGISwapChain* swapChain);
 /// Shut down ImGui and release resources.
 void shutdown();
 
+/// Invalidate the render target view (must be called before ResizeBuffers).
+void invalidateRenderTarget();
+
 /// Set the translations to display on the overlay.
 void setTranslations(const std::vector<TranslatedEntry>& entries);
 

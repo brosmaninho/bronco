@@ -3,7 +3,7 @@
 #include <list>
 #include <unordered_map>
 #include <optional>
-#include <mutex>
+#include <shared_mutex>
 #include <cstddef>
 
 namespace bronco::cache {
@@ -13,6 +13,10 @@ namespace bronco::cache {
 /// Uses a doubly-linked list to maintain access order and a hash map for
 /// constant-time key lookup. The most recently accessed item is at the front
 /// of the list; eviction removes from the back.
+///
+/// Read operations (contains, size) use a shared lock to allow concurrent
+/// readers. Write operations (get, put, erase, clear) use an exclusive lock.
+/// Note: get() is a write operation because it updates access order.
 ///
 /// @tparam Key The key type (must be hashable)
 /// @tparam Value The value type
@@ -31,9 +35,10 @@ public:
 
     /// Look up a value by key. Returns std::nullopt if not found.
     /// Moves the accessed item to the front (most recently used).
+    /// Uses exclusive lock since it mutates the list order.
     std::optional<Value> get(const Key& key)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
 
         auto it = m_map.find(key);
         if (it == m_map.end())
@@ -46,11 +51,26 @@ public:
         return it->second->second;
     }
 
+    /// Look up a value without updating access order.
+    /// Uses shared lock - multiple threads can peek concurrently.
+    std::optional<Value> peek(const Key& key) const
+    {
+        std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+        auto it = m_map.find(key);
+        if (it == m_map.end())
+        {
+            return std::nullopt;
+        }
+
+        return it->second->second;
+    }
+
     /// Insert or update a key-value pair.
     /// If the cache is at capacity, the least recently used item is evicted.
     void put(const Key& key, const Value& value)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
 
         auto it = m_map.find(key);
         if (it != m_map.end())
@@ -75,9 +95,10 @@ public:
     }
 
     /// Check if a key exists in the cache (does NOT update access order).
+    /// Uses shared lock for concurrent reads.
     bool contains(const Key& key) const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::shared_lock<std::shared_mutex> lock(m_mutex);
         return m_map.find(key) != m_map.end();
     }
 
@@ -85,7 +106,7 @@ public:
     /// @return true if the key was found and removed
     bool erase(const Key& key)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
 
         auto it = m_map.find(key);
         if (it == m_map.end()) return false;
@@ -98,7 +119,7 @@ public:
     /// Clear all entries from the cache.
     void clear()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
         m_list.clear();
         m_map.clear();
     }
@@ -106,7 +127,7 @@ public:
     /// Get the current number of entries in the cache.
     std::size_t size() const
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::shared_lock<std::shared_mutex> lock(m_mutex);
         return m_map.size();
     }
 
@@ -120,7 +141,7 @@ public:
     /// evicts least recently used items until within bounds.
     void resize(std::size_t newCapacity)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::shared_mutex> lock(m_mutex);
         m_capacity = newCapacity;
 
         while (m_map.size() > m_capacity)
@@ -135,7 +156,7 @@ private:
     std::size_t m_capacity;
     std::list<KeyValue> m_list;
     std::unordered_map<Key, ListIterator> m_map;
-    mutable std::mutex m_mutex;
+    mutable std::shared_mutex m_mutex;
 };
 
 } // namespace bronco::cache

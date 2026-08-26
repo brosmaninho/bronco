@@ -8,6 +8,7 @@ set(BRONCO_SOURCES
     translation/translator.cpp
     translation/dictionary.cpp
     config/config.cpp
+    pipeline/pipeline.cpp
 )
 
 # Build as a shared library (DLL on Windows)
