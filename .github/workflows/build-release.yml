@@ -32,8 +32,7 @@ jobs:
         shell: pwsh
 
       - name: Install vcpkg dependencies
-        run: |
-          C:\vcpkg\vcpkg.exe install imgui[dx11-binding,win32-binding] tesseract sqlite3 nlohmann-json --triplet x64-windows
+        run: C:\vcpkg\vcpkg.exe install --triplet x64-windows
         shell: pwsh
 
       - name: Configure CMake
