@@ -18,14 +18,16 @@ Guia completo para instalar, configurar e remover o Bronco - Tradutor Overlay pa
 
 ### 2. Executar o Instalador
 
-**Opcao A: Clique duplo (mais simples)**
+**Opcao A: Duplo-clique no .bat (mais simples - recomendado)**
 
 1. Abra a pasta extraida
 2. Navegue ate a pasta `scripts/`
-3. Clique com o botao direito em `install.ps1`
-4. Selecione **"Executar com PowerShell"**
+3. De duplo-clique em **`Instalar.bat`**
 
-**Opcao B: Via terminal (se a Opcao A nao funcionar)**
+Pronto! O .bat executa o instalador automaticamente, sem necessidade de configurar
+politicas de execucao do PowerShell.
+
+**Opcao B: Via terminal (alternativa)**
 
 1. Abra o PowerShell (tecla Windows > digite "PowerShell" > Enter)
 2. Navegue ate a pasta extraida:
@@ -56,12 +58,14 @@ Inicie o Guild Wars 2 normalmente. O Bronco sera carregado automaticamente.
 
 ### Via Script
 
+**Opcao A: Duplo-clique no .bat (recomendado)**
+
 1. Abra a pasta onde voce extraiu o ZIP do Bronco
 2. Navegue ate `scripts/`
-3. Clique com o botao direito em `uninstall.ps1`
-4. Selecione **"Executar com PowerShell"**
+3. De duplo-clique em **`Desinstalar.bat`**
 
-Ou via terminal:
+**Opcao B: Via terminal**
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1
 ```

@@ -75,14 +75,15 @@ A maneira mais simples de instalar o Bronco:
 
 1. Baixe o ZIP da [pagina de Releases](https://github.com/brosmaninho/bronco/releases)
 2. Extraia em qualquer pasta
-3. Execute o instalador:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\install.ps1
-```
+3. De duplo-clique em `scripts\Instalar.bat`
 
 O instalador detecta automaticamente a pasta do Guild Wars 2, copia todos os
 arquivos necessarios e configura o idioma de traducao.
+
+> **Nota:** O arquivo `.bat` ja cuida automaticamente da politica de execucao do
+> PowerShell. Nao e necessario executar nenhum comando manual.
+
+Para desinstalar, de duplo-clique em `scripts\Desinstalar.bat`.
 
 Para instrucoes detalhadas, veja [docs/INSTALL.md](docs/INSTALL.md).
 

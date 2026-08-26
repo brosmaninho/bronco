@@ -89,6 +89,8 @@ jobs:
           # Copy scripts
           Copy-Item "scripts/install.ps1" "$releaseDir/scripts/"
           Copy-Item "scripts/uninstall.ps1" "$releaseDir/scripts/"
+          Copy-Item "scripts/Instalar.bat" "$releaseDir/scripts/"
+          Copy-Item "scripts/Desinstalar.bat" "$releaseDir/scripts/"
 
           # Copy install readme
           Copy-Item "docs/INSTALL.md" "$releaseDir/README_INSTALL.md"
@@ -109,7 +111,7 @@ jobs:
 
             1. Baixe o arquivo `bronco-v${{ steps.version.outputs.VERSION }}-win64.zip`
             2. Extraia o ZIP em qualquer pasta
-            3. Execute `scripts/install.ps1` (clique com botao direito > Executar com PowerShell)
+            3. De duplo-clique em `scripts/Instalar.bat`
 
             Para mais detalhes, veja o arquivo `README_INSTALL.md` dentro do ZIP.
           files: "bronco-v${{ steps.version.outputs.VERSION }}-win64.zip"
