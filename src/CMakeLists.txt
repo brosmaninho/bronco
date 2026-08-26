@@ -40,6 +40,7 @@ target_include_directories(d3d11 PRIVATE
 target_link_libraries(d3d11 PRIVATE
     imgui::imgui
     nlohmann_json::nlohmann_json
+    unofficial::minhook::minhook
     d3d11.lib
     dxgi.lib
     d3dcompiler.lib

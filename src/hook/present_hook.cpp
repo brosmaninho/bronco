@@ -3,17 +3,26 @@
 #include "../config/config.h"
 #include "../pipeline/pipeline.h"
 
+#include <MinHook.h>
 #include <mutex>
 
 namespace bronco::hook {
 
 namespace {
-    // Original function pointers
+    // Original function pointer typedefs
     using PFN_Present = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT);
     using PFN_ResizeBuffers = HRESULT(STDMETHODCALLTYPE*)(IDXGISwapChain*, UINT, UINT, UINT, DXGI_FORMAT, UINT);
 
-    PFN_Present g_originalPresent = nullptr;
-    PFN_ResizeBuffers g_originalResizeBuffers = nullptr;
+    // Trampoline pointers (provided by MinHook - call these to invoke the original)
+    PFN_Present g_trampolinePresent = nullptr;
+    PFN_ResizeBuffers g_trampolineResizeBuffers = nullptr;
+
+    // Target function addresses (read from the VTable, used as hook targets)
+    void* g_targetPresent = nullptr;
+    void* g_targetResizeBuffers = nullptr;
+
+    // Whether MinHook has been initialized
+    bool g_minhookInitialized = false;
 
     // Hook mutex (guards hookSwapChain and uninstall)
     std::mutex g_hookMutex;
@@ -41,8 +50,8 @@ namespace {
         // Invalidate the pipeline's staging texture so it is recreated with new dimensions
         bronco::pipeline::instance().invalidateStagingTexture();
 
-        // Call the original ResizeBuffers
-        HRESULT hr = g_originalResizeBuffers(swapChain, bufferCount, width, height, newFormat, swapChainFlags);
+        // Call the original ResizeBuffers via trampoline
+        HRESULT hr = g_trampolineResizeBuffers(swapChain, bufferCount, width, height, newFormat, swapChainFlags);
 
         // Re-create render target after successful resize
         if (SUCCEEDED(hr))
@@ -101,8 +110,8 @@ namespace {
             bronco::overlay::render(swapChain);
         }
 
-        // Call the original Present
-        return g_originalPresent(swapChain, syncInterval, flags);
+        // Call the original Present via trampoline
+        return g_trampolinePresent(swapChain, syncInterval, flags);
     }
 
     void cleanupDeviceObjects()
@@ -124,7 +133,15 @@ void uninstall()
 {
     std::lock_guard<std::mutex> lock(g_hookMutex);
 
-    // Shut down pipeline first (stops background OCR thread)
+    // Disable all MinHook hooks and uninitialize
+    if (g_minhookInitialized)
+    {
+        MH_DisableHook(MH_ALL_HOOKS);
+        MH_Uninitialize();
+        g_minhookInitialized = false;
+    }
+
+    // Shut down pipeline (stops background OCR thread)
     bronco::pipeline::instance().shutdown();
 
     if (g_overlayInitialized)
@@ -135,17 +152,22 @@ void uninstall()
 
     cleanupDeviceObjects();
 
-    OutputDebugStringA("[Bronco] Present hook uninstalled\n");
+    g_trampolinePresent = nullptr;
+    g_trampolineResizeBuffers = nullptr;
+    g_targetPresent = nullptr;
+    g_targetResizeBuffers = nullptr;
+
+    OutputDebugStringA("[Bronco] Present hook uninstalled (MinHook cleaned up)\n");
 }
 
 void hookSwapChain(IDXGISwapChain* swapChain)
 {
-    if (!swapChain || g_originalPresent) return;
+    if (!swapChain || g_trampolinePresent) return;
 
     std::lock_guard<std::mutex> lock(g_hookMutex);
 
     // Double-check after acquiring lock
-    if (g_originalPresent) return;
+    if (g_trampolinePresent) return;
 
     // Get the vtable of the swap chain
     void** vtable = *reinterpret_cast<void***>(swapChain);
@@ -156,47 +178,76 @@ void hookSwapChain(IDXGISwapChain* swapChain)
     // ResizeBuffers is at index 13
     constexpr int RESIZE_BUFFERS_VTABLE_INDEX = 13;
 
-    // Save originals before patching
-    g_originalPresent = reinterpret_cast<PFN_Present>(vtable[PRESENT_VTABLE_INDEX]);
-    g_originalResizeBuffers = reinterpret_cast<PFN_ResizeBuffers>(vtable[RESIZE_BUFFERS_VTABLE_INDEX]);
+    // Read the target function addresses from the VTable
+    g_targetPresent = vtable[PRESENT_VTABLE_INDEX];
+    g_targetResizeBuffers = vtable[RESIZE_BUFFERS_VTABLE_INDEX];
 
-    // Patch Present vtable entry
-    DWORD oldProtect = 0;
-    BOOL vpResult = VirtualProtect(
-        &vtable[PRESENT_VTABLE_INDEX], sizeof(void*),
-        PAGE_EXECUTE_READWRITE, &oldProtect);
-
-    if (!vpResult)
+    // Initialize MinHook
+    if (!g_minhookInitialized)
     {
-        // VirtualProtect failed - another overlay or anti-cheat may have locked the page.
-        // Abort hook to prevent undefined behavior.
-        OutputDebugStringA("[Bronco] VirtualProtect failed for Present vtable slot - aborting hook\n");
-        g_originalPresent = nullptr;
-        g_originalResizeBuffers = nullptr;
+        MH_STATUS status = MH_Initialize();
+        if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED)
+        {
+            OutputDebugStringA("[Bronco] MH_Initialize() failed - aborting hook\n");
+            g_targetPresent = nullptr;
+            g_targetResizeBuffers = nullptr;
+            return;
+        }
+        g_minhookInitialized = true;
+    }
+
+    // Create inline hook for Present
+    MH_STATUS status = MH_CreateHook(
+        g_targetPresent,
+        reinterpret_cast<LPVOID>(&hookedPresent),
+        reinterpret_cast<LPVOID*>(&g_trampolinePresent));
+
+    if (status != MH_OK)
+    {
+        OutputDebugStringA("[Bronco] MH_CreateHook failed for Present - aborting hook\n");
+        g_targetPresent = nullptr;
+        g_targetResizeBuffers = nullptr;
         return;
     }
 
-    vtable[PRESENT_VTABLE_INDEX] = reinterpret_cast<void*>(&hookedPresent);
-    VirtualProtect(&vtable[PRESENT_VTABLE_INDEX], sizeof(void*), oldProtect, &oldProtect);
+    // Create inline hook for ResizeBuffers
+    status = MH_CreateHook(
+        g_targetResizeBuffers,
+        reinterpret_cast<LPVOID>(&hookedResizeBuffers),
+        reinterpret_cast<LPVOID*>(&g_trampolineResizeBuffers));
 
-    // Patch ResizeBuffers vtable entry
-    oldProtect = 0;
-    vpResult = VirtualProtect(
-        &vtable[RESIZE_BUFFERS_VTABLE_INDEX], sizeof(void*),
-        PAGE_EXECUTE_READWRITE, &oldProtect);
-
-    if (!vpResult)
+    if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] VirtualProtect failed for ResizeBuffers vtable slot\n");
-        // Present is already hooked so we continue, but ResizeBuffers won't be intercepted
-    }
-    else
-    {
-        vtable[RESIZE_BUFFERS_VTABLE_INDEX] = reinterpret_cast<void*>(&hookedResizeBuffers);
-        VirtualProtect(&vtable[RESIZE_BUFFERS_VTABLE_INDEX], sizeof(void*), oldProtect, &oldProtect);
+        OutputDebugStringA("[Bronco] MH_CreateHook failed for ResizeBuffers\n");
+        // Present hook was created successfully, continue without ResizeBuffers
     }
 
-    OutputDebugStringA("[Bronco] SwapChain::Present() and ResizeBuffers() hooked successfully\n");
+    // Enable the Present hook
+    status = MH_EnableHook(g_targetPresent);
+    if (status != MH_OK)
+    {
+        OutputDebugStringA("[Bronco] MH_EnableHook failed for Present - aborting\n");
+        MH_RemoveHook(g_targetPresent);
+        MH_RemoveHook(g_targetResizeBuffers);
+        g_trampolinePresent = nullptr;
+        g_trampolineResizeBuffers = nullptr;
+        g_targetPresent = nullptr;
+        g_targetResizeBuffers = nullptr;
+        return;
+    }
+
+    // Enable the ResizeBuffers hook
+    if (g_trampolineResizeBuffers)
+    {
+        status = MH_EnableHook(g_targetResizeBuffers);
+        if (status != MH_OK)
+        {
+            OutputDebugStringA("[Bronco] MH_EnableHook failed for ResizeBuffers\n");
+            // Present is still hooked, continue without ResizeBuffers
+        }
+    }
+
+    OutputDebugStringA("[Bronco] Present() and ResizeBuffers() hooked via MinHook (inline hook)\n");
 }
 
 } // namespace bronco::hook

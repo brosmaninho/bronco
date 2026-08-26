@@ -218,9 +218,9 @@ HMODULE getOurModule()
 namespace {
     std::atomic<bool> g_presentHooked{false};
 
-    /// Install the Present/ResizeBuffers hook by creating a temporary SwapChain
-    /// from the given device. This is the standard technique used by overlays
-    /// (arcdps, ReShade) to hook IDXGISwapChain::Present globally via VTable patching.
+    /// Install inline hook via MinHook using the temporary swap chain's VTable to
+    /// locate Present/ResizeBuffers function addresses. This is the standard technique
+    /// used by overlays (arcdps, ReShade) to hook IDXGISwapChain::Present globally.
     void installHookViaDummySwapChain(ID3D11Device* device)
     {
         if (g_presentHooked.load()) return;
@@ -295,8 +295,8 @@ namespace {
 
         if (SUCCEEDED(hr) && tempSwapChain)
         {
-            // Hook the VTable via the temporary swap chain.
-            // All swap chains share the same VTable so this patches Present globally.
+            // Install inline hooks on Present/ResizeBuffers via MinHook.
+            // We read function pointers from the VTable, then hook the actual functions.
             bronco::hook::hookSwapChain(tempSwapChain);
             g_presentHooked.store(true);
 
