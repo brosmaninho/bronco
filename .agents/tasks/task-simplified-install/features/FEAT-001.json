@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create a GitHub Actions CI/CD workflow that automatically compiles the project on Windows using MSVC + vcpkg and publishes a release artifact (ZIP) containing the DLL, config, dictionaries, and tessdata. Also create the installer, uninstaller, and user documentation.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create .github/workflows/build-release.yml - a GitHub Actions workflow that: (a) triggers on push of a version tag (v*), (b) uses windows-latest runner, (c) sets up vcpkg from github.com/microsoft/vcpkg, (d) runs cmake --preset windows-msvc, (e) builds with cmake --build build/windows-msvc --config Release, (f) downloads eng.traineddata from https://github.com/tesseract-ocr/tessdata_best/raw/main/eng.traineddata, (g) packages build output into a release ZIP (bronco-v{version}-win64.zip) with structure: d3d11.dll, config/bronco_config.json, data/dictionaries/pt-br/*.json, data/tessdata/eng.traineddata, install.ps1, uninstall.ps1, README_INSTALL.md, (h) creates a GitHub Release with the ZIP attached using softprops/action-gh-release or similar",
     "Create scripts/install.ps1 - a PowerShell installer script (must work with PowerShell 5.1+ on Windows 10/11) that: (a) displays a welcome banner for Bronco, (b) checks if running as Administrator (optional, warns if not), (c) auto-detects GW2 install folder by checking common paths (C:\\Program Files\\Guild Wars 2, C:\\Program Files (x86)\\Guild Wars 2, and registry key HKLM:\\SOFTWARE\\ArenaNet\\Guild Wars 2 or similar), (d) lets user confirm or browse/type a custom path, (e) lets user pick target language from available dictionaries (list subdirectories under data/dictionaries/ in the extracted ZIP, default pt-br), (f) copies d3d11.dll to the GW2 folder, (g) copies config/ directory to GW2 folder, (h) copies data/ directory (dictionaries + tessdata) to GW2 folder, (i) updates config/bronco_config.json with chosen target_locale, (j) shows a success message with instructions to launch GW2, (k) handles errors gracefully with user-friendly messages",
@@ -28,5 +28,5 @@
     "Confirm all file paths referenced in scripts match the actual project structure (config/bronco_config.json, data/dictionaries/, data/tessdata/)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All files created successfully. YAML validated with PyYAML (note: 'on' key parsed as boolean True which is expected PyYAML behavior but valid for GitHub Actions). PowerShell scripts validated for balanced braces/parens. pwsh not available on Linux sandbox so full PS syntax validation skipped. All file paths in workflow and scripts verified against actual project structure."
 }
