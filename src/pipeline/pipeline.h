@@ -43,6 +43,10 @@ public:
     /// Called from the hooked Present(). Triggers a capture if the OCR interval has elapsed.
     void onPresent(IDXGISwapChain* swapChain);
 
+    /// Invalidate the staging texture so it is recreated on the next capture.
+    /// Must be called when the swap chain is resized (e.g., from hookedResizeBuffers).
+    void invalidateStagingTexture();
+
     /// Check if the pipeline is running.
     bool isRunning() const;
 
@@ -69,8 +73,8 @@ private:
     std::thread m_worker;
     std::atomic<bool> m_running{false};
 
-    // Timing
-    DWORD m_lastCaptureTime = 0;
+    // Timing (using GetTickCount64 to avoid 32-bit wraparound after ~49 days)
+    ULONGLONG m_lastCaptureTime = 0;
 };
 
 /// Get the global pipeline instance.

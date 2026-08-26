@@ -40,13 +40,16 @@ namespace {
         // Must release the render target view before ResizeBuffers
         bronco::overlay::invalidateRenderTarget();
 
+        // Invalidate the pipeline's staging texture so it is recreated with new dimensions
+        bronco::pipeline::instance().invalidateStagingTexture();
+
         // Call the original ResizeBuffers
         HRESULT hr = g_originalResizeBuffers(swapChain, bufferCount, width, height, newFormat, swapChainFlags);
 
         // Re-create render target after successful resize
         if (SUCCEEDED(hr))
         {
-            OutputDebugStringA("[Bronco] SwapChain resized, render target invalidated\n");
+            OutputDebugStringA("[Bronco] SwapChain resized, render target and staging texture invalidated\n");
         }
 
         return hr;

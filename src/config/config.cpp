@@ -46,7 +46,7 @@ bool Config::load(const std::filesystem::path& configPath)
 
 bool Config::save()
 {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
 
     try
     {

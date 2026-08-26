@@ -281,22 +281,25 @@ HRESULT WINAPI proxied_D3D11On12CreateDevice(
 }
 
 // --- Generic trampoline stubs for the remaining 44 exports ---
-// Each function calls through its stored FARPROC from the real d3d11.dll.
-// These use the standard calling convention. On x64, arguments are passed in
-// registers (rcx, rdx, r8, r9) and on the stack. Because the trampoline
-// does not modify any registers before calling the target, and uses the same
-// calling convention (WINAPI/__stdcall on x86, __fastcall on x64), the
-// arguments pass through correctly for functions taking a single pointer arg
-// (which is the case for all D3DKMT functions).
+// D3DKMT functions have the signature: NTSTATUS WINAPI D3DKMTXxx(void* pData)
+// They take a single pointer argument and return NTSTATUS.
+// Non-D3DKMT forwards (D3D11Core*, OpenAdapter*, etc.) also take pointer args.
+// We declare each trampoline with the proper signature to preserve both the
+// argument and return value across the forwarding call.
+
+// NTSTATUS is a LONG (typedef in Windows headers via ntdef.h / ntstatus.h).
+// We use LONG here to avoid pulling in ntdef.h.
+using NTSTATUS_PROXY = LONG;
 
 #define DEFINE_TRAMPOLINE(exportName, idx) \
-    void WINAPI proxied_##exportName() \
+    NTSTATUS_PROXY WINAPI proxied_##exportName(void* pData) \
     { \
         auto proc = bronco::proxy::g_forwardedExports[bronco::proxy::idx].proc; \
         if (proc) \
         { \
-            reinterpret_cast<void(WINAPI*)()>(proc)(); \
+            return reinterpret_cast<NTSTATUS_PROXY(WINAPI*)(void*)>(proc)(pData); \
         } \
+        return 0; /* STATUS_SUCCESS when proc is not resolved */ \
     }
 
 DEFINE_TRAMPOLINE(D3D11CoreCreateDevice, IDX_D3D11CoreCreateDevice)

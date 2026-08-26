@@ -90,7 +90,7 @@ bool Pipeline::initialize(ID3D11Device* device, ID3D11DeviceContext* context, ID
     m_running.store(true);
     m_worker = std::thread(&Pipeline::workerThread, this);
 
-    m_lastCaptureTime = GetTickCount();
+    m_lastCaptureTime = GetTickCount64();
     OutputDebugStringA("[Bronco] Pipeline: Initialized and worker thread started\n");
     return true;
 }
@@ -126,10 +126,10 @@ void Pipeline::onPresent(IDXGISwapChain* swapChain)
 {
     if (!m_running.load() || !swapChain) return;
 
-    // Only capture at the configured interval
-    DWORD now = GetTickCount();
-    int intervalMs = bronco::Config::instance().ocrIntervalMs();
-    if (static_cast<int>(now - m_lastCaptureTime) < intervalMs) return;
+    // Only capture at the configured interval (using GetTickCount64 to avoid wraparound)
+    ULONGLONG now = GetTickCount64();
+    ULONGLONG intervalMs = static_cast<ULONGLONG>(bronco::Config::instance().ocrIntervalMs());
+    if ((now - m_lastCaptureTime) < intervalMs) return;
 
     // Only capture if the worker has consumed the previous frame
     if (m_captureReady.load()) return;
@@ -145,6 +145,18 @@ void Pipeline::onPresent(IDXGISwapChain* swapChain)
 bool Pipeline::isRunning() const
 {
     return m_running.load();
+}
+
+void Pipeline::invalidateStagingTexture()
+{
+    // Release the current staging texture; it will be recreated on next capture
+    // with the new backbuffer dimensions.
+    if (m_stagingTexture)
+    {
+        m_stagingTexture->Release();
+        m_stagingTexture = nullptr;
+    }
+    OutputDebugStringA("[Bronco] Pipeline: Staging texture invalidated (resize)\n");
 }
 
 void Pipeline::workerThread()
@@ -217,13 +229,52 @@ void Pipeline::workerThread()
 
 bool Pipeline::captureBackbuffer(IDXGISwapChain* swapChain)
 {
-    if (!m_stagingTexture || !m_context) return false;
+    if (!m_device || !m_context) return false;
 
     // Get the backbuffer
     ID3D11Texture2D* backBuffer = nullptr;
     HRESULT hr = swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D),
         reinterpret_cast<void**>(&backBuffer));
     if (FAILED(hr) || !backBuffer) return false;
+
+    // Check backbuffer dimensions against our staging texture
+    D3D11_TEXTURE2D_DESC bbDesc = {};
+    backBuffer->GetDesc(&bbDesc);
+
+    int bbWidth = static_cast<int>(bbDesc.Width);
+    int bbHeight = static_cast<int>(bbDesc.Height);
+
+    // Recreate staging texture if dimensions changed or it was invalidated
+    if (!m_stagingTexture || bbWidth != m_captureWidth || bbHeight != m_captureHeight)
+    {
+        if (m_stagingTexture)
+        {
+            m_stagingTexture->Release();
+            m_stagingTexture = nullptr;
+        }
+
+        D3D11_TEXTURE2D_DESC stagingDesc = {};
+        stagingDesc.Width = bbDesc.Width;
+        stagingDesc.Height = bbDesc.Height;
+        stagingDesc.MipLevels = 1;
+        stagingDesc.ArraySize = 1;
+        stagingDesc.Format = bbDesc.Format;
+        stagingDesc.SampleDesc.Count = 1;
+        stagingDesc.Usage = D3D11_USAGE_STAGING;
+        stagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+
+        hr = m_device->CreateTexture2D(&stagingDesc, nullptr, &m_stagingTexture);
+        if (FAILED(hr))
+        {
+            backBuffer->Release();
+            OutputDebugStringA("[Bronco] Pipeline: Failed to recreate staging texture after resize\n");
+            return false;
+        }
+
+        m_captureWidth = bbWidth;
+        m_captureHeight = bbHeight;
+        OutputDebugStringA("[Bronco] Pipeline: Staging texture recreated for new dimensions\n");
+    }
 
     // Copy backbuffer to staging texture
     m_context->CopyResource(m_stagingTexture, backBuffer);
