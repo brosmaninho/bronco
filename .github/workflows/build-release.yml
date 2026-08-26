@@ -31,15 +31,13 @@ jobs:
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
         shell: pwsh
 
-      - name: Install vcpkg dependencies
-        run: C:\vcpkg\vcpkg.exe install --triplet x64-windows
+      - name: Configure CMake
+        run: cmake -B build/release -S . -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -A x64
         shell: pwsh
 
-      - name: Configure CMake
-        run: cmake --preset windows-msvc
-
       - name: Build Release
-        run: cmake --build build/windows-msvc --config Release
+        run: cmake --build build/release --config Release
+        shell: pwsh
 
       - name: Download Tesseract trained data
         run: |
@@ -71,8 +69,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/tessdata"
           New-Item -ItemType Directory -Force -Path "$releaseDir/scripts"
 
-          # Copy DLL
-          Copy-Item "build/windows-msvc/bin/Release/d3d11.dll" "$releaseDir/"
+          # Copy DLL (find it dynamically since output path varies by generator)
+          $dll = Get-ChildItem -Path "build/release" -Recurse -Filter "d3d11.dll" | Select-Object -First 1
+          if (-not $dll) {
+            Write-Error "d3d11.dll not found in build/release"
+            exit 1
+          }
+          Copy-Item $dll.FullName "$releaseDir/"
 
           # Copy config
           Copy-Item "config/bronco_config.json" "$releaseDir/config/"
