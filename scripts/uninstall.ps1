@@ -221,11 +221,43 @@ Write-Host ""
 
 $errors = @()
 
-# Remover d3d11.dll
+# Remover d3d11.dll (with ownership verification)
 if (Test-Path $dllPath) {
     try {
-        Remove-Item -Path $dllPath -Force
-        Write-Host "  Removido: d3d11.dll" -ForegroundColor Green
+        $isBroncoDll = $false
+        $fileInfo = $null
+
+        try {
+            $fileInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($dllPath)
+        }
+        catch {
+            # Unable to read version info - proceed with caution
+        }
+
+        if ($fileInfo -and $fileInfo.ProductName -like "*Bronco*") {
+            $isBroncoDll = $true
+        }
+
+        if ($isBroncoDll) {
+            Remove-Item -Path $dllPath -Force
+            Write-Host "  Removido: d3d11.dll" -ForegroundColor Green
+        }
+        else {
+            Write-Warning-Message "O d3d11.dll encontrado pode nao pertencer ao Bronco."
+            Write-Warning-Message "Outros overlays (arcdps, ReShade, GW2Hook) tambem usam esse arquivo."
+            if ($fileInfo -and $fileInfo.ProductName) {
+                Write-Warning-Message "ProductName identificado: $($fileInfo.ProductName)"
+            }
+            Write-Host ""
+            $dllConfirm = Read-Host "Deseja remover mesmo assim? (S/N)"
+            if ($dllConfirm -in @('S', 's', 'Sim', 'sim', 'Y', 'y')) {
+                Remove-Item -Path $dllPath -Force
+                Write-Host "  Removido: d3d11.dll" -ForegroundColor Green
+            }
+            else {
+                Write-Warning-Message "d3d11.dll mantido."
+            }
+        }
     }
     catch {
         $errors += "d3d11.dll: $($_.Exception.Message)"

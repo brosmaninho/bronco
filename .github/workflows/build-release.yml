@@ -31,7 +31,7 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: '2024.09.30'
+          vcpkgGitCommitId: 'c82f74667287d3dc386bce81e44964370c91a289'
 
       - name: Configure CMake
         run: cmake --preset windows-msvc
@@ -60,7 +60,7 @@ jobs:
 
           # Create release directory structure
           New-Item -ItemType Directory -Force -Path "$releaseDir/config"
-          New-Item -ItemType Directory -Force -Path "$releaseDir/data/dictionaries/pt-br"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/dictionaries"
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/tessdata"
           New-Item -ItemType Directory -Force -Path "$releaseDir/scripts"
 
@@ -70,8 +70,8 @@ jobs:
           # Copy config
           Copy-Item "config/bronco_config.json" "$releaseDir/config/"
 
-          # Copy dictionaries
-          Copy-Item "data/dictionaries/pt-br/*.json" "$releaseDir/data/dictionaries/pt-br/"
+          # Copy all dictionaries (all locales)
+          Copy-Item "data/dictionaries/*" "$releaseDir/data/dictionaries/" -Recurse
 
           # Copy tessdata
           Copy-Item "staging/data/tessdata/eng.traineddata" "$releaseDir/data/tessdata/"

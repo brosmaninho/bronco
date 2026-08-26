@@ -255,15 +255,56 @@ Write-Host ""
 
 $scriptRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
 
+# Fallback: if d3d11.dll is not found at the expected root, try $PSScriptRoot directly
+if (-not (Test-Path (Join-Path $scriptRoot "d3d11.dll"))) {
+    $altRoot = $PSScriptRoot
+    if (Test-Path (Join-Path $altRoot "d3d11.dll")) {
+        $scriptRoot = $altRoot
+    }
+}
+
+# --- Pre-flight validation: check all required files before copying anything ---
+$requiredFiles = @(
+    (Join-Path $scriptRoot "d3d11.dll"),
+    (Join-Path $scriptRoot "config\bronco_config.json"),
+    (Join-Path $scriptRoot "data\tessdata\eng.traineddata")
+)
+
+$missingFiles = @()
+foreach ($f in $requiredFiles) {
+    if (-not (Test-Path $f)) {
+        $missingFiles += $f
+    }
+}
+
+# Check that at least one dictionary directory exists
+$dictRoot = Join-Path $scriptRoot "data\dictionaries"
+$hasDictionaries = $false
+if (Test-Path $dictRoot) {
+    $dictDirs = Get-ChildItem -Path $dictRoot -Directory
+    if ($dictDirs.Count -gt 0) {
+        $hasDictionaries = $true
+    }
+}
+
+if ($missingFiles.Count -gt 0 -or -not $hasDictionaries) {
+    Write-Error-Message "Arquivos necessarios nao encontrados. Verifique se voce extraiu o ZIP completo."
+    Write-Host ""
+    foreach ($mf in $missingFiles) {
+        Write-Host "  Faltando: $mf" -ForegroundColor Red
+    }
+    if (-not $hasDictionaries) {
+        Write-Host "  Faltando: dicionarios em data\dictionaries\" -ForegroundColor Red
+    }
+    Write-Host ""
+    Write-Error-Message "Resolucao esperada do pacote: $scriptRoot"
+    Read-Host "Pressione Enter para sair"
+    exit 1
+}
+
 try {
     # Copiar d3d11.dll
     $dllSource = Join-Path $scriptRoot "d3d11.dll"
-    if (-not (Test-Path $dllSource)) {
-        Write-Error-Message "Arquivo d3d11.dll nao encontrado em: $dllSource"
-        Write-Error-Message "Verifique se voce extraiu o ZIP completo."
-        Read-Host "Pressione Enter para sair"
-        exit 1
-    }
 
     Write-Host "  Copiando d3d11.dll..." -NoNewline
     Copy-Item -Path $dllSource -Destination $gw2Path -Force
