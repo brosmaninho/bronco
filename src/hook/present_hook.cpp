@@ -50,7 +50,10 @@ namespace {
         // Invalidate the pipeline's staging texture so it is recreated with new dimensions
         bronco::pipeline::instance().invalidateStagingTexture();
 
-        // Call the original ResizeBuffers via trampoline
+        // Call the original ResizeBuffers via trampoline (null check for safety)
+        if (!g_trampolineResizeBuffers)
+            return E_FAIL;
+
         HRESULT hr = g_trampolineResizeBuffers(swapChain, bufferCount, width, height, newFormat, swapChainFlags);
 
         // Re-create render target after successful resize
@@ -137,6 +140,14 @@ void uninstall()
     if (g_minhookInitialized)
     {
         MH_DisableHook(MH_ALL_HOOKS);
+
+        // Allow in-flight hooked calls to drain before tearing down state.
+        // MH_DisableHook restores the prologue but does not fence threads that
+        // are already past the hook entry point. This delay (same approach as
+        // ReShade) gives those threads time to return before we destroy objects
+        // they may still reference.
+        Sleep(100);
+
         MH_Uninitialize();
         g_minhookInitialized = false;
     }
@@ -218,8 +229,15 @@ void hookSwapChain(IDXGISwapChain* swapChain)
 
     if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] MH_CreateHook failed for ResizeBuffers\n");
-        // Present hook was created successfully, continue without ResizeBuffers
+        OutputDebugStringA("[Bronco] MH_CreateHook failed for ResizeBuffers - aborting entire hook\n");
+        // Roll back the Present hook to avoid partial-hook state where the overlay
+        // never sees resize events, leading to stale render targets on window resize.
+        MH_RemoveHook(g_targetPresent);
+        g_trampolinePresent = nullptr;
+        g_trampolineResizeBuffers = nullptr;
+        g_targetPresent = nullptr;
+        g_targetResizeBuffers = nullptr;
+        return;
     }
 
     // Enable the Present hook
@@ -237,14 +255,19 @@ void hookSwapChain(IDXGISwapChain* swapChain)
     }
 
     // Enable the ResizeBuffers hook
-    if (g_trampolineResizeBuffers)
+    status = MH_EnableHook(g_targetResizeBuffers);
+    if (status != MH_OK)
     {
-        status = MH_EnableHook(g_targetResizeBuffers);
-        if (status != MH_OK)
-        {
-            OutputDebugStringA("[Bronco] MH_EnableHook failed for ResizeBuffers\n");
-            // Present is still hooked, continue without ResizeBuffers
-        }
+        OutputDebugStringA("[Bronco] MH_EnableHook failed for ResizeBuffers - aborting entire hook\n");
+        // Roll back everything to avoid partial-hook state
+        MH_DisableHook(g_targetPresent);
+        MH_RemoveHook(g_targetPresent);
+        MH_RemoveHook(g_targetResizeBuffers);
+        g_trampolinePresent = nullptr;
+        g_trampolineResizeBuffers = nullptr;
+        g_targetPresent = nullptr;
+        g_targetResizeBuffers = nullptr;
+        return;
     }
 
     OutputDebugStringA("[Bronco] Present() and ResizeBuffers() hooked via MinHook (inline hook)\n");
