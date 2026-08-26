@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Replace VTable patching with MinHook inline hooking in present_hook.cpp to fix AMD driver crash (INVALID_POINTER_WRITE in amdxx64.dll). The AMD driver caches VTable pointers internally, so patching the VTable corrupts driver state. MinHook patches the first bytes of the target function (inside dxgi.dll) instead, which is safe for all drivers.",
+  "status": "completed",
+  "steps": [
+    "Step 1: Add 'minhook' to vcpkg.json dependencies array. The package name in vcpkg is 'minhook'. Add it as a simple string entry alongside the existing dependencies.",
+    "Step 2: In CMakeLists.txt (root), add `find_package(unofficial-minhook CONFIG REQUIRED)` alongside the other find_package calls. The vcpkg port for minhook uses the 'unofficial::minhook::minhook' target name.",
+    "Step 3: In src/CMakeLists.txt, add `unofficial::minhook::minhook` to the target_link_libraries for the d3d11 target.",
+    "Step 4: Rewrite src/hook/present_hook.cpp to use MinHook instead of VTable patching. Key changes: (a) Add `#include <MinHook.h>` at the top. (b) Add a static bool g_minhookInitialized to track MH_Initialize state. (c) Add trampoline pointers: `PFN_Present g_trampolinePresent = nullptr;` and `PFN_ResizeBuffers g_trampolineResizeBuffers = nullptr;` in the anonymous namespace. (d) In hookedPresent(), change the final call from `g_originalPresent(...)` to `g_trampolinePresent(...)`. (e) In hookedResizeBuffers(), change the call from `g_originalResizeBuffers(...)` to `g_trampolineResizeBuffers(...)`. (f) Rewrite hookSwapChain(): still read vtable[8] and vtable[13] to get the target function addresses, but instead of VirtualProtect + VTable write, use MH_Initialize() (if not already done), then MH_CreateHook(target, hook, &trampoline) for each, then MH_EnableHook(target) for each. Remove ALL VirtualProtect code. (g) Rewrite uninstall(): before cleanup, call MH_DisableHook(MH_ALL_HOOKS) and MH_Uninitialize(). Keep the rest (pipeline shutdown, overlay shutdown, cleanupDeviceObjects).",
+    "Step 5: Update the comment in src/proxy/d3d11_proxy.cpp at line ~186 (the installHookViaDummySwapChain function) to say 'Install inline hook via MinHook using the temporary swap chain's VTable to locate Present/ResizeBuffers' instead of 'Hook the VTable via the temporary swap chain'.",
+    "Step 6: Update present_hook.h - the doc comment for hookSwapChain should mention 'inline hook via MinHook' instead of 'hook a specific swap chain's vtable'. The function signature stays the same."
+  ],
+  "acceptance_criteria": [
+    "vcpkg.json contains 'minhook' in the dependencies array",
+    "Root CMakeLists.txt has find_package(unofficial-minhook CONFIG REQUIRED)",
+    "src/CMakeLists.txt links unofficial::minhook::minhook",
+    "present_hook.cpp includes <MinHook.h>",
+    "present_hook.cpp calls MH_Initialize(), MH_CreateHook(), MH_EnableHook() in hookSwapChain()",
+    "present_hook.cpp calls MH_DisableHook(MH_ALL_HOOKS) and MH_Uninitialize() in uninstall()",
+    "present_hook.cpp uses trampoline pointers (not g_originalPresent directly) when calling the original functions",
+    "No VirtualProtect calls remain in present_hook.cpp",
+    "The dummy SwapChain technique in hookSwapChain is preserved (still reads vtable[8] and vtable[13] to get target addresses)",
+    "present_hook.h doc comment updated to reference inline hooking via MinHook"
+  ],
+  "verification": [
+    "grep -c 'VirtualProtect' src/hook/present_hook.cpp should return 0",
+    "grep -c 'MH_Initialize' src/hook/present_hook.cpp should return at least 1",
+    "grep -c 'MH_CreateHook' src/hook/present_hook.cpp should return at least 2 (one for Present, one for ResizeBuffers)",
+    "grep -c 'MH_EnableHook' src/hook/present_hook.cpp should return at least 1",
+    "grep -c 'MH_DisableHook' src/hook/present_hook.cpp should return at least 1",
+    "grep -c 'MH_Uninitialize' src/hook/present_hook.cpp should return at least 1",
+    "grep -c 'minhook' vcpkg.json should return at least 1",
+    "grep -c 'unofficial-minhook' CMakeLists.txt should return at least 1",
+    "grep -c 'unofficial::minhook::minhook' src/CMakeLists.txt should return at least 1"
+  ],
+  "blocked_reason": null,
+  "findings": "All verification checks pass. VirtualProtect removed (0 occurrences), MinHook API calls present (MH_Initialize, MH_CreateHook x2, MH_EnableHook x2, MH_DisableHook, MH_Uninitialize). Trampoline pointers used instead of g_originalPresent/g_originalResizeBuffers. Cannot build-verify on Linux sandbox (Windows-only project) but structural validation is complete."
+}
