@@ -28,5 +28,5 @@
     "Confirm all file paths referenced in scripts match the actual project structure (config/bronco_config.json, data/dictionaries/, data/tessdata/)"
   ],
   "blocked_reason": null,
-  "findings": "All files created successfully. YAML validated with PyYAML (note: 'on' key parsed as boolean True which is expected PyYAML behavior but valid for GitHub Actions). PowerShell scripts validated for balanced braces/parens. pwsh not available on Linux sandbox so full PS syntax validation skipped. All file paths in workflow and scripts verified against actual project structure."
+  "findings": "All files created successfully. YAML validated with PyYAML (note: 'on' key parsed as boolean True which is expected PyYAML behavior but valid for GitHub Actions). PowerShell scripts validated for balanced braces/parens. pwsh not available on Linux sandbox so full PS syntax validation skipped. All file paths in workflow and scripts verified against actual project structure. Review fixes applied: vcpkgGitCommitId set to c82f74667287d3dc386bce81e44964370c91a289 (2024.09.30 tag SHA), dictionaries copy is now recursive for all locales, installer has pre-flight validation of all required files, path resolution has $PSScriptRoot fallback, uninstaller checks DLL ownership via FileVersionInfo.ProductName."
 }
