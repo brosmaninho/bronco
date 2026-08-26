@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fix-proxy-loading",
+  "task_description": "Fix the d3d11.dll proxy DLL that causes GW2 to show 'Unable to initialize 3D output'. Three root causes: (1) Heavy dependencies (Tesseract, leptonica, sqlite3) linked at load time cause LoadLibrary failure, (2) Present hook only in D3D11CreateDeviceAndSwapChain which GW2 does not call, (3) DllMain does too much. Solution: separate OCR/translation into a runtime-loaded DLL, hook Present via dummy SwapChain in D3D11CreateDevice, make DllMain minimal.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

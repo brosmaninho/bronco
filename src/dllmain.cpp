@@ -1,6 +1,5 @@
 #include "proxy/d3d11_proxy.h"
 #include "hook/present_hook.h"
-#include "config/config.h"
 
 #include <Windows.h>
 
@@ -11,22 +10,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hModule);
 
-        // NOTE: Config loading is deferred to first Present() call to avoid
-        // filesystem I/O under the Windows loader lock (deadlock risk).
-        // See Config::ensureLoaded() called from hookedPresent().
-
-        // Initialize the D3D11 proxy (loads real d3d11.dll from System32)
+        // DllMain must be minimal - only initialize the proxy (load real d3d11.dll
+        // from System32 and resolve the 3 main function pointers + forwarded exports).
+        // The Present hook is installed lazily from proxied_D3D11CreateDevice or
+        // proxied_D3D11CreateDeviceAndSwapChain when the game creates a device.
         if (!bronco::proxy::initialize(hModule))
         {
             return FALSE;
         }
-
-        // Install the Present() hook
-        bronco::hook::install();
         break;
 
     case DLL_PROCESS_DETACH:
-        // Clean up in reverse order
         bronco::hook::uninstall();
         bronco::proxy::shutdown();
         break;

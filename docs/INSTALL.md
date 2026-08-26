@@ -75,6 +75,7 @@ powershell -ExecutionPolicy Bypass -File scripts\uninstall.ps1
 Se preferir remover manualmente, delete os seguintes arquivos da pasta do Guild Wars 2:
 
 - `d3d11.dll`
+- `bronco_ocr.dll`
 - Pasta `config/` (contem `bronco_config.json`)
 - Pasta `data/` (contem `dictionaries/` e `tessdata/`)
 
@@ -140,11 +141,11 @@ Nao modifica memoria do jogo e nao envia dados para nenhum servidor.
 
 Para resolver:
 1. Adicione uma excecao no seu antivirus para a pasta do Guild Wars 2
-2. Ou adicione especificamente o arquivo `d3d11.dll` como excecao
+2. Ou adicione especificamente os arquivos `d3d11.dll` e `bronco_ocr.dll` como excecao
 
 ### O overlay nao aparece no jogo
 
-1. Verifique se o arquivo `d3d11.dll` esta na mesma pasta que `Gw2-64.exe`
+1. Verifique se os arquivos `d3d11.dll` e `bronco_ocr.dll` estao na mesma pasta que `Gw2-64.exe`
 2. Pressione **F8** para garantir que o overlay esta ligado
 3. Verifique se `data\tessdata\eng.traineddata` existe
 4. Verifique se os dicionarios existem em `data\dictionaries\`
@@ -163,7 +164,8 @@ Apos a instalacao, os seguintes arquivos estarao na pasta do Guild Wars 2:
 ```
 Guild Wars 2/
     Gw2-64.exe             <- Executavel do jogo (ja existia)
-    d3d11.dll              <- DLL do Bronco (overlay)
+    d3d11.dll              <- DLL do Bronco (proxy leve)
+    bronco_ocr.dll         <- Engine de OCR e traducao (carregado em runtime)
     config/
         bronco_config.json <- Configuracoes do Bronco
     data/

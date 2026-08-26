@@ -77,6 +77,14 @@ jobs:
           }
           Copy-Item $dll.FullName "$releaseDir/"
 
+          # Copy bronco_ocr.dll (OCR engine DLL loaded at runtime)
+          $ocrDll = Get-ChildItem -Path "build/release" -Recurse -Filter "bronco_ocr.dll" | Select-Object -First 1
+          if (-not $ocrDll) {
+            Write-Error "bronco_ocr.dll not found in build/release"
+            exit 1
+          }
+          Copy-Item $ocrDll.FullName "$releaseDir/"
+
           # Copy config
           Copy-Item "config/bronco_config.json" "$releaseDir/config/"
 

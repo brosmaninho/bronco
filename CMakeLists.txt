@@ -15,5 +15,8 @@ find_package(Tesseract CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
-# Add source subdirectory
+# Build the OCR DLL first (has heavy dependencies: Tesseract, sqlite3)
+add_subdirectory(src/ocr)
+
+# Build the main d3d11.dll proxy (lightweight, no heavy dependencies)
 add_subdirectory(src)

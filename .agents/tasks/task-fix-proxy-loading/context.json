@@ -1,0 +1,32 @@
+{
+  "project_type": "Windows DLL (d3d11 proxy) for Guild Wars 2 translation overlay",
+  "language": "C++20",
+  "build_system": "CMake + vcpkg, MSVC, Windows x64 only. Uses CMakePresets.json with 'windows-msvc' and 'windows-msvc-debug' presets. CI runs on windows-latest.",
+  "test_framework": "None - no test infrastructure exists. Validation is done by confirming the DLL compiles without errors.",
+  "build_command": "Cannot build on this Linux host (requires MSVC + vcpkg on Windows). Validate via static analysis of code structure and CMake syntax.",
+  "test_command": "N/A - no tests exist",
+  "verification_instructions": "1. Verify CMakeLists.txt syntax is valid. 2. Verify all source files compile conceptually (no missing includes, no unresolved references between files). 3. Verify .def file exports match the extern C functions declared. 4. Verify the architecture: DllMain only loads real d3d11.dll, hooks are installed lazily from proxied_D3D11CreateDevice.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "Windows-only project. Requires: Visual Studio 2022, vcpkg, CMake 3.21+. Build with: cmake --preset windows-msvc && cmake --build build/windows-msvc --config Release",
+  "environment_constraints": "This is a Windows-only project (DX11, MSVC). We are on a Linux host so we cannot actually compile the code. Verification must be done through code review, checking CMake syntax validity, and ensuring consistency between .def exports and function declarations.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing code patterns - namespace bronco::*, RAII, OutputDebugStringA for logging, Windows API conventions.",
+  "key_patterns": "Namespace hierarchy: bronco::proxy, bronco::hook, bronco::overlay, bronco::pipeline, bronco::ocr, bronco::translation, bronco::Config. Singleton pattern (Config, Pipeline). Anonymous namespaces for file-local state. VTable hooking for IDXGISwapChain. Proxy pattern: .def file maps export names to proxied_* functions which forward to real DLL.",
+  "relevant_files": [
+    "src/dllmain.cpp",
+    "src/proxy/d3d11_proxy.cpp",
+    "src/proxy/d3d11_proxy.h",
+    "src/proxy/d3d11_exports.def",
+    "src/hook/present_hook.cpp",
+    "src/hook/present_hook.h",
+    "src/overlay/imgui_overlay.cpp",
+    "src/overlay/imgui_overlay.h",
+    "src/pipeline/pipeline.cpp",
+    "src/pipeline/pipeline.h",
+    "src/ocr/ocr_engine.cpp",
+    "src/ocr/ocr_engine.h",
+    "src/CMakeLists.txt",
+    "CMakeLists.txt",
+    "vcpkg.json"
+  ],
+  "directory_structure": "Root: CMakeLists.txt, vcpkg.json, CMakePresets.json. src/: all C++ sources organized by module (proxy/, hook/, overlay/, pipeline/, ocr/, translation/, config/, cache/). config/: runtime JSON config. data/: dictionaries and tessdata. scripts/: install/uninstall batch files. docs/: documentation. .github/workflows/: CI."
+}

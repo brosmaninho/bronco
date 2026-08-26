@@ -266,6 +266,7 @@ if (-not (Test-Path (Join-Path $scriptRoot "d3d11.dll"))) {
 # --- Pre-flight validation: check all required files before copying anything ---
 $requiredFiles = @(
     (Join-Path $scriptRoot "d3d11.dll"),
+    (Join-Path $scriptRoot "bronco_ocr.dll"),
     (Join-Path $scriptRoot "config\bronco_config.json"),
     (Join-Path $scriptRoot "data\tessdata\eng.traineddata")
 )
@@ -308,6 +309,13 @@ try {
 
     Write-Host "  Copiando d3d11.dll..." -NoNewline
     Copy-Item -Path $dllSource -Destination $gw2Path -Force
+    Write-Host " OK" -ForegroundColor Green
+
+    # Copiar bronco_ocr.dll (engine de OCR carregado em runtime)
+    $ocrDllSource = Join-Path $scriptRoot "bronco_ocr.dll"
+
+    Write-Host "  Copiando bronco_ocr.dll..." -NoNewline
+    Copy-Item -Path $ocrDllSource -Destination $gw2Path -Force
     Write-Host " OK" -ForegroundColor Green
 
     # Copiar config/

@@ -6,14 +6,13 @@
 
 namespace bronco::hook {
 
-/// Install the Present() hook (called from DllMain on attach).
-void install();
-
-/// Uninstall the Present() hook (called from DllMain on detach).
+/// Uninstall the Present() hook and clean up (called from DllMain on detach).
 void uninstall();
 
-/// Hook a specific swap chain's vtable to intercept Present().
-/// Called when D3D11CreateDeviceAndSwapChain succeeds.
+/// Hook a specific swap chain's vtable to intercept Present() and ResizeBuffers().
+/// Called when a D3D11 device is created (from proxied_D3D11CreateDevice via dummy
+/// SwapChain, or from proxied_D3D11CreateDeviceAndSwapChain with the real one).
+/// Only hooks once - subsequent calls are no-ops.
 void hookSwapChain(IDXGISwapChain* swapChain);
 
 } // namespace bronco::hook

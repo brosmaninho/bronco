@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <array>
+#include <atomic>
 
 namespace bronco::proxy {
 
@@ -208,6 +209,101 @@ FARPROC getOriginalFunction(const char* name)
 
 } // namespace bronco::proxy
 
+// --- Global hook state ---
+namespace {
+    std::atomic<bool> g_presentHooked{false};
+
+    /// Install the Present/ResizeBuffers hook by creating a temporary SwapChain
+    /// from the given device. This is the standard technique used by overlays
+    /// (arcdps, ReShade) to hook IDXGISwapChain::Present globally via VTable patching.
+    void installHookViaDummySwapChain(ID3D11Device* device)
+    {
+        if (g_presentHooked.load()) return;
+
+        // Query IDXGIDevice from the D3D11 device
+        IDXGIDevice* dxgiDevice = nullptr;
+        HRESULT hr = device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
+        if (FAILED(hr) || !dxgiDevice) return;
+
+        // Get the DXGI adapter
+        IDXGIAdapter* adapter = nullptr;
+        hr = dxgiDevice->GetAdapter(&adapter);
+        dxgiDevice->Release();
+        if (FAILED(hr) || !adapter) return;
+
+        // Get the DXGI factory
+        IDXGIFactory* factory = nullptr;
+        hr = adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&factory));
+        adapter->Release();
+        if (FAILED(hr) || !factory) return;
+
+        // Register a temporary window class for the dummy window
+        WNDCLASSEXW wc = {};
+        wc.cbSize = sizeof(WNDCLASSEXW);
+        wc.lpfnWndProc = DefWindowProcW;
+        wc.hInstance = GetModuleHandleW(nullptr);
+        wc.lpszClassName = L"BroncoDummyHookWnd";
+
+        ATOM classAtom = RegisterClassExW(&wc);
+        if (!classAtom)
+        {
+            factory->Release();
+            return;
+        }
+
+        // Create a hidden 1x1 window
+        HWND dummyHwnd = CreateWindowExW(
+            0, L"BroncoDummyHookWnd", L"",
+            WS_OVERLAPPED,
+            0, 0, 1, 1,
+            nullptr, nullptr, wc.hInstance, nullptr);
+
+        if (!dummyHwnd)
+        {
+            UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
+            factory->Release();
+            return;
+        }
+
+        // Create a minimal swap chain on the dummy window
+        DXGI_SWAP_CHAIN_DESC scDesc = {};
+        scDesc.BufferCount = 1;
+        scDesc.BufferDesc.Width = 1;
+        scDesc.BufferDesc.Height = 1;
+        scDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        scDesc.BufferDesc.RefreshRate.Numerator = 60;
+        scDesc.BufferDesc.RefreshRate.Denominator = 1;
+        scDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        scDesc.OutputWindow = dummyHwnd;
+        scDesc.SampleDesc.Count = 1;
+        scDesc.Windowed = TRUE;
+        scDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+        IDXGISwapChain* tempSwapChain = nullptr;
+        hr = factory->CreateSwapChain(device, &scDesc, &tempSwapChain);
+        factory->Release();
+
+        if (SUCCEEDED(hr) && tempSwapChain)
+        {
+            // Hook the VTable via the temporary swap chain.
+            // All swap chains share the same VTable so this patches Present globally.
+            bronco::hook::hookSwapChain(tempSwapChain);
+            g_presentHooked.store(true);
+
+            tempSwapChain->Release();
+            OutputDebugStringA("[Bronco] Present hook installed via dummy SwapChain\n");
+        }
+        else
+        {
+            OutputDebugStringA("[Bronco] Failed to create dummy SwapChain for hook\n");
+        }
+
+        // Clean up dummy window
+        DestroyWindow(dummyHwnd);
+        UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
+    }
+} // anonymous namespace
+
 // --- Forwarded exports (global scope for .def linkage) ---
 
 extern "C" {
@@ -224,10 +320,19 @@ HRESULT WINAPI proxied_D3D11CreateDevice(
     D3D_FEATURE_LEVEL* pFeatureLevel,
     ID3D11DeviceContext** ppImmediateContext)
 {
-    return bronco::proxy::g_originalCreateDevice(
+    HRESULT hr = bronco::proxy::g_originalCreateDevice(
         pAdapter, DriverType, Software, Flags,
         pFeatureLevels, FeatureLevels, SDKVersion,
         ppDevice, pFeatureLevel, ppImmediateContext);
+
+    // If device was created and we haven't hooked yet, install the Present hook
+    // by creating a temporary SwapChain to access the VTable.
+    if (SUCCEEDED(hr) && ppDevice && *ppDevice && !g_presentHooked.load())
+    {
+        installHookViaDummySwapChain(*ppDevice);
+    }
+
+    return hr;
 }
 
 HRESULT WINAPI proxied_D3D11CreateDeviceAndSwapChain(

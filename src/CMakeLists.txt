@@ -1,12 +1,13 @@
-# Collect all source files
+# Main d3d11.dll proxy - must be ultra-lightweight at load time.
+# Heavy dependencies (Tesseract, sqlite3) live in bronco_ocr.dll and are loaded
+# at runtime via LoadLibrary when the pipeline worker thread needs OCR.
+
 set(BRONCO_SOURCES
     dllmain.cpp
     proxy/d3d11_proxy.cpp
     hook/present_hook.cpp
     overlay/imgui_overlay.cpp
-    ocr/ocr_engine.cpp
-    translation/translator.cpp
-    translation/dictionary.cpp
+    ocr/ocr_loader.cpp
     config/config.cpp
     pipeline/pipeline.cpp
 )
@@ -29,11 +30,10 @@ target_include_directories(d3d11 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# Link dependencies
+# Link ONLY lightweight/system dependencies.
+# NO Tesseract, NO sqlite3 - those are in bronco_ocr.dll loaded at runtime.
 target_link_libraries(d3d11 PRIVATE
     imgui::imgui
-    Tesseract::libtesseract
-    unofficial::sqlite3::sqlite3
     nlohmann_json::nlohmann_json
     d3d11.lib
     dxgi.lib

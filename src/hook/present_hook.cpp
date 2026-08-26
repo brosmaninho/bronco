@@ -3,7 +3,6 @@
 #include "../config/config.h"
 #include "../pipeline/pipeline.h"
 
-#include <atomic>
 #include <mutex>
 
 namespace bronco::hook {
@@ -16,8 +15,7 @@ namespace {
     PFN_Present g_originalPresent = nullptr;
     PFN_ResizeBuffers g_originalResizeBuffers = nullptr;
 
-    // Hook state
-    std::atomic<bool> g_hookInstalled{false};
+    // Hook mutex (guards hookSwapChain and uninstall)
     std::mutex g_hookMutex;
 
     // Device context saved from first Present call
@@ -61,7 +59,7 @@ namespace {
         // Initialize overlay on first call (deferred from DllMain to avoid loader lock)
         if (!g_overlayInitialized)
         {
-            // Load config on first Present (deferred from DllMain - Issue #8)
+            // Load config on first Present (deferred from DllMain)
             bronco::Config::instance().ensureLoaded();
 
             // Get the device from the swap chain
@@ -122,12 +120,6 @@ namespace {
     }
 } // anonymous namespace
 
-void install()
-{
-    g_hookInstalled.store(true);
-    OutputDebugStringA("[Bronco] Present hook system ready\n");
-}
-
 void uninstall()
 {
     std::lock_guard<std::mutex> lock(g_hookMutex);
@@ -143,7 +135,6 @@ void uninstall()
 
     cleanupDeviceObjects();
 
-    g_hookInstalled.store(false);
     OutputDebugStringA("[Bronco] Present hook uninstalled\n");
 }
 

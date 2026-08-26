@@ -1,7 +1,6 @@
 #include "pipeline.h"
 #include "../config/config.h"
-#include "../ocr/ocr_engine.h"
-#include "../translation/translator.h"
+#include "../ocr/ocr_loader.h"
 #include "../overlay/imgui_overlay.h"
 
 #include <chrono>
@@ -9,39 +8,32 @@
 namespace bronco::pipeline {
 
 namespace {
-    // OCR engine and translator are owned by the pipeline worker thread
-    bronco::ocr::OcrEngine g_ocrEngine;
-    bronco::translation::Translator g_translator;
+    // OCR loader (loads bronco_ocr.dll at runtime via LoadLibrary)
+    bronco::ocr::OcrLoader g_ocrLoader;
     bool g_modulesInitialized = false;
 
-    /// Initialize OCR and translation modules using current config.
+    /// Initialize OCR module via the dynamic loader.
     bool initializeModules()
     {
         if (g_modulesInitialized) return true;
 
         auto& config = bronco::Config::instance();
 
-        // Initialize OCR engine
-        if (!g_ocrEngine.initialize(config.tessDataPath(), config.ocrLanguage()))
-        {
-            OutputDebugStringA("[Bronco] Pipeline: Failed to initialize OCR engine\n");
-            return false;
-        }
-
-        g_ocrEngine.setConfidenceThreshold(config.ocrConfidenceThreshold());
-
-        // Initialize translator with dictionaries
-        if (!g_translator.initialize(
+        // Initialize OCR engine + translator via the loader (loads bronco_ocr.dll)
+        if (!g_ocrLoader.initialize(
+            config.tessDataPath(),
+            config.ocrLanguage(),
             config.dictionaryPath(),
             config.targetLocale(),
-            config.cacheCapacity()))
+            config.ocrConfidenceThreshold(),
+            static_cast<int>(config.cacheCapacity())))
         {
-            OutputDebugStringA("[Bronco] Pipeline: Failed to initialize translator\n");
+            OutputDebugStringA("[Bronco] Pipeline: Failed to initialize OCR loader\n");
             return false;
         }
 
         g_modulesInitialized = true;
-        OutputDebugStringA("[Bronco] Pipeline: OCR and translation modules initialized\n");
+        OutputDebugStringA("[Bronco] Pipeline: OCR loader initialized (bronco_ocr.dll loaded)\n");
         return true;
     }
 } // anonymous namespace
@@ -112,7 +104,7 @@ void Pipeline::shutdown()
 
     if (g_modulesInitialized)
     {
-        g_ocrEngine.shutdown();
+        g_ocrLoader.shutdown();
         g_modulesInitialized = false;
     }
 
@@ -161,7 +153,7 @@ void Pipeline::invalidateStagingTexture()
 
 void Pipeline::workerThread()
 {
-    // Initialize OCR and translation on this thread (avoids blocking render)
+    // Initialize OCR via the loader on this thread (avoids blocking render thread)
     if (!initializeModules())
     {
         OutputDebugStringA("[Bronco] Pipeline: Worker thread exiting - module init failed\n");
@@ -195,30 +187,45 @@ void Pipeline::workerThread()
         auto regions = bronco::Config::instance().ocrRegions();
         if (regions.empty()) continue;
 
-        // Run OCR on the captured frame
-        auto ocrResults = g_ocrEngine.recognizeRegions(
-            pixels.data(), width, height, regions);
+        // Build arrays for the C API
+        std::vector<int> regionXs, regionYs, regionWidths, regionHeights;
+        regionXs.reserve(regions.size());
+        regionYs.reserve(regions.size());
+        regionWidths.reserve(regions.size());
+        regionHeights.reserve(regions.size());
 
-        if (ocrResults.empty()) continue;
+        for (const auto& r : regions)
+        {
+            regionXs.push_back(r.x);
+            regionYs.push_back(r.y);
+            regionWidths.push_back(r.width);
+            regionHeights.push_back(r.height);
+        }
 
-        // Translate OCR results
-        auto translations = g_translator.translateBatch(ocrResults);
+        // Process frame via the OCR loader (calls into bronco_ocr.dll)
+        std::vector<BroncoOcrResult> ocrResults;
+        bool success = g_ocrLoader.processFrame(
+            pixels.data(), width, height,
+            regionXs.data(), regionYs.data(),
+            regionWidths.data(), regionHeights.data(),
+            static_cast<int>(regions.size()),
+            ocrResults);
 
-        if (translations.empty()) continue;
+        if (!success || ocrResults.empty()) continue;
 
-        // Build overlay entries with screen positions from the OCR regions
+        // Build overlay entries from OCR results
         std::vector<bronco::overlay::TranslatedEntry> overlayEntries;
-        overlayEntries.reserve(translations.size());
+        overlayEntries.reserve(ocrResults.size());
 
-        for (size_t i = 0; i < translations.size() && i < ocrResults.size(); ++i)
+        for (const auto& result : ocrResults)
         {
             bronco::overlay::TranslatedEntry entry;
-            entry.original = translations[i].original;
-            entry.translated = translations[i].translated;
-            entry.x = static_cast<float>(ocrResults[i].region.x);
-            entry.y = static_cast<float>(ocrResults[i].region.y);
-            entry.width = static_cast<float>(ocrResults[i].region.width);
-            entry.height = static_cast<float>(ocrResults[i].region.height);
+            entry.original = result.originalText ? result.originalText : "";
+            entry.translated = result.translatedText ? result.translatedText : "";
+            entry.x = static_cast<float>(result.regionX);
+            entry.y = static_cast<float>(result.regionY);
+            entry.width = static_cast<float>(result.regionWidth);
+            entry.height = static_cast<float>(result.regionHeight);
             overlayEntries.push_back(std::move(entry));
         }
 

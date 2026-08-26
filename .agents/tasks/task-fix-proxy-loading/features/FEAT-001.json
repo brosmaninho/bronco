@@ -1,0 +1,37 @@
+{
+  "id": "FEAT-001",
+  "type": "fix",
+  "description": "Fix the d3d11.dll proxy DLL to be ultra-lightweight at load time with zero external dependencies, implement proper Present hook via dummy SwapChain from D3D11CreateDevice, and lazy-load all heavy modules. This addresses all three root causes of the GW2 'Unable to initialize 3D output' error.",
+  "status": "in_progress",
+  "steps": [
+    "STEP 1 - Separate OCR engine into its own DLL (bronco_ocr.dll): Create src/ocr/CMakeLists.txt that builds a separate shared library 'bronco_ocr' linking against Tesseract::libtesseract and unofficial::sqlite3::sqlite3. This DLL exports a C API (bronco_ocr_create, bronco_ocr_initialize, bronco_ocr_recognize, bronco_ocr_shutdown, bronco_ocr_destroy). Keep src/ocr/ocr_engine.h and ocr_engine.cpp but add a new src/ocr/ocr_exports.h with the C API declarations and src/ocr/ocr_exports.cpp with implementations that delegate to OcrEngine. Add src/ocr/ocr_exports.def for the exports.",
+    "STEP 2 - Create a dynamic loader for the OCR DLL: Create src/ocr/ocr_loader.h and src/ocr/ocr_loader.cpp that uses LoadLibrary/GetProcAddress to load bronco_ocr.dll at runtime. This provides the same interface as OcrEngine but loads the DLL lazily on first use. The pipeline will use this loader instead of directly including tesseract headers.",
+    "STEP 3 - Modify src/CMakeLists.txt: Remove Tesseract::libtesseract from the main d3d11 target's link libraries. Remove ocr_engine.cpp from the main target's sources. Add ocr_loader.cpp instead. Keep imgui::imgui (it is header-only + small compiled backend, needed for overlay). Keep nlohmann_json (header-only). Keep unofficial::sqlite3::sqlite3 only in the OCR DLL, remove from main target. The main d3d11.dll should only link: imgui::imgui, nlohmann_json::nlohmann_json, d3d11.lib, dxgi.lib, d3dcompiler.lib. Update root CMakeLists.txt to add_subdirectory(src/ocr) before add_subdirectory(src) so the OCR DLL builds first.",
+    "STEP 4 - Modify src/pipeline/pipeline.cpp: Replace #include of ocr_engine.h with ocr_loader.h. Change the pipeline worker to use the OcrLoader interface instead of directly calling OcrEngine methods. The loader handles LoadLibrary of bronco_ocr.dll on first call.",
+    "STEP 5 - Fix the Present hook to work with D3D11CreateDevice (without SwapChain): Modify src/proxy/d3d11_proxy.cpp's proxied_D3D11CreateDevice function. After successfully calling the real D3D11CreateDevice, if the hook has not yet been installed (check a global atomic flag), create a hidden dummy HWND, query IDXGIDevice -> IDXGIAdapter -> IDXGIFactory from the returned ID3D11Device, then call factory->CreateSwapChain with a minimal DXGI_SWAP_CHAIN_DESC pointing to the dummy window. Use this temporary swap chain to get the VTable pointer for IDXGISwapChain, then call hook::hookSwapChain(tempSwapChain). Release the temp swap chain and destroy the dummy window. This patches Present/ResizeBuffers globally since all swap chains share the same VTable. Keep the existing hook in proxied_D3D11CreateDeviceAndSwapChain as a fallback.",
+    "STEP 6 - Make DllMain minimal: Modify src/dllmain.cpp to ONLY call proxy::initialize() in DLL_PROCESS_ATTACH. Remove the call to hook::install() from DllMain. The hook::install() is currently a no-op (just sets a flag) but remove it for clarity - the hook will be installed from proxied_D3D11CreateDevice instead.",
+    "STEP 7 - Update src/hook/present_hook.h and present_hook.cpp: Remove the install() function (it was just setting a flag). Keep uninstall() and hookSwapChain(). Add a guard in hookSwapChain so it only hooks once (already exists via the g_originalPresent check). Remove the g_hookInstalled atomic since it served no real purpose.",
+    "STEP 8 - Update the CI workflow (.github/workflows/build-release.yml): In the 'Package release' step, also copy the bronco_ocr.dll to the release directory alongside d3d11.dll. Search for it in build/release similar to how d3d11.dll is found.",
+    "STEP 9 - Update docs/INSTALL.md and scripts: Mention that bronco_ocr.dll must be in the same folder as d3d11.dll. Update install.ps1 to copy both DLLs.",
+    "STEP 10 - Ensure the translation module (dictionary.cpp, translator.cpp) is part of the OCR DLL or loaded lazily: Since translator.cpp uses dictionary.cpp which uses sqlite3 and the LRU cache, and it's called from the pipeline worker thread, move translator.cpp and dictionary.cpp into the bronco_ocr DLL as well (they are only used in the OCR processing context). Update the C API to include translation functions (bronco_ocr_translate_batch) or keep them internal to the OCR DLL called via a combined 'process frame' C API function."
+  ],
+  "acceptance_criteria": [
+    "The main d3d11.dll target in CMakeLists.txt does NOT link against Tesseract, leptonica, sqlite3, or any other heavy dependency - only system DLLs (d3d11.lib, dxgi.lib, d3dcompiler.lib) and header-only/lightweight libs (imgui, nlohmann_json)",
+    "A separate bronco_ocr.dll (or similar) is built that contains the OCR engine, translation, and dictionary code with all heavy dependencies",
+    "The main d3d11.dll loads bronco_ocr.dll via LoadLibrary at runtime (not at DLL load time) only when the pipeline needs OCR",
+    "proxied_D3D11CreateDevice creates a dummy swap chain to obtain the VTable and hooks Present/ResizeBuffers globally, so GW2's D3D11CreateDevice path triggers the hook",
+    "DllMain only calls proxy::initialize() to load the real d3d11.dll and resolve the 3 main function pointers + forwarded exports",
+    "All source files are internally consistent - no missing includes, no references to removed functions, .def exports match declared extern C functions",
+    "The CI workflow packages bronco_ocr.dll alongside d3d11.dll in the release ZIP"
+  ],
+  "verification": [
+    "Run 'cmake -P /dev/null' style check or manually review CMakeLists.txt for syntax correctness",
+    "Verify that src/CMakeLists.txt does not list Tesseract::libtesseract in the d3d11 target's target_link_libraries",
+    "Verify proxied_D3D11CreateDevice in d3d11_proxy.cpp contains the dummy-swapchain hook logic",
+    "Verify DllMain in dllmain.cpp only calls proxy::initialize() and nothing else on attach",
+    "Verify the .def file exports still match the extern C function declarations",
+    "Review the OCR DLL's C API for completeness"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
