@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "fix",
   "description": "Fix the d3d11.dll proxy DLL to be ultra-lightweight at load time with zero external dependencies, implement proper Present hook via dummy SwapChain from D3D11CreateDevice, and lazy-load all heavy modules. This addresses all three root causes of the GW2 'Unable to initialize 3D output' error.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "STEP 1 - Separate OCR engine into its own DLL (bronco_ocr.dll): Create src/ocr/CMakeLists.txt that builds a separate shared library 'bronco_ocr' linking against Tesseract::libtesseract and unofficial::sqlite3::sqlite3. This DLL exports a C API (bronco_ocr_create, bronco_ocr_initialize, bronco_ocr_recognize, bronco_ocr_shutdown, bronco_ocr_destroy). Keep src/ocr/ocr_engine.h and ocr_engine.cpp but add a new src/ocr/ocr_exports.h with the C API declarations and src/ocr/ocr_exports.cpp with implementations that delegate to OcrEngine. Add src/ocr/ocr_exports.def for the exports.",
     "STEP 2 - Create a dynamic loader for the OCR DLL: Create src/ocr/ocr_loader.h and src/ocr/ocr_loader.cpp that uses LoadLibrary/GetProcAddress to load bronco_ocr.dll at runtime. This provides the same interface as OcrEngine but loads the DLL lazily on first use. The pipeline will use this loader instead of directly including tesseract headers.",
@@ -33,5 +33,5 @@
     "Review the OCR DLL's C API for completeness"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 10 steps implemented. Cannot build on Linux host (MSVC + vcpkg required), so validation was done via code structure review, CMake syntax checking, and consistency verification (.def exports match declarations, no dangling references to removed functions, include paths are correct). Key design: ocr_engine.h is a lightweight header (no Tesseract includes) so it can still be included by config.h in the main DLL for the ScreenRegion type. The heavy implementation (ocr_engine.cpp, translator.cpp, dictionary.cpp) lives exclusively in bronco_ocr.dll."
 }
