@@ -15,6 +15,7 @@ set(BRONCO_SOURCES
 add_library(d3d11 SHARED
     ${BRONCO_SOURCES}
     proxy/d3d11_exports.def
+    bronco.rc
 )
 
 # Set output name to d3d11 (produces d3d11.dll)
