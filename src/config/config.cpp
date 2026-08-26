@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <Windows.h>
+
 #include <nlohmann/json.hpp>
 #include <fstream>
 
