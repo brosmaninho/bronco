@@ -62,3 +62,11 @@ config/bronco_config.local.json
 
 # Dictionary generator cache (raw GW2 API data, translation cache, Argos model)
 tools/dictionary-generator/cache/
+
+# Python virtualenvs (dictionary generator setup)
+.venv/
+tools/dictionary-generator/.venv/
+
+# Python bytecode caches
+__pycache__/
+*.pyc

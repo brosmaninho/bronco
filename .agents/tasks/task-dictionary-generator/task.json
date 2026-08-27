@@ -1,8 +1,8 @@
 {
   "task_id": "task-dictionary-generator",
   "task_description": "Create a standalone Python dictionary generator in tools/dictionary-generator/ that fetches GW2 content from the official REST API (api.guildwars2.com/v2), translates EN->PT-BR offline via Argos Translate (Opcao C), and writes dictionaries in the exact JSON schema the Bronco C++ loader expects (locale/category/version/entries with 'en'+'translated'). Tool is idempotent, resumable, rate-limited with retry/backoff and a progress bar, and does NOT run in CI or go through the C++/MSVC build. Includes PT-BR docs and a demonstrated sample (regenerated skills.json).",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002"],
-  "_comment_status": "FEAT-001 completed; FEAT-002 (live demonstration run) still pending.",
+  "_comment_status": "FEAT-001 completed; FEAT-002 completed (live end-to-end demo: full skills dataset, 2963 entries, real Argos EN->PT translation, resumability proven).",
   "blocked_reason": null
 }
