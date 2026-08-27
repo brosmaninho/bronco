@@ -16,6 +16,7 @@ struct TranslatedEntry {
     float y = 0.0f;
     float width = 0.0f;
     float height = 0.0f;
+    bool matched = false; // true = dictionary match (prominent), false = raw OCR line (dim)
 };
 
 /// Initialize Dear ImGui with DirectX 11 backend.

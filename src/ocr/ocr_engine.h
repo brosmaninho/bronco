@@ -77,7 +77,7 @@ public:
 private:
     struct Impl;
     std::unique_ptr<Impl> m_impl;
-    float m_confidenceThreshold = 60.0f;
+    float m_confidenceThreshold = 40.0f;
 };
 
 } // namespace bronco::ocr

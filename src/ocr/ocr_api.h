@@ -13,6 +13,13 @@
 
 #include <cstdint>
 
+/// Maximum number of BroncoOcrResult entries bronco_ocr_process_frame will ever
+/// write. The caller (OcrLoader) allocates exactly this many slots, and the DLL
+/// stops writing when it reaches this cap so the caller-allocated array is never
+/// overflowed. One OCR region can produce many recognized lines, so this is much
+/// larger than the region count.
+#define BRONCO_OCR_MAX_RESULTS 64
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +36,7 @@ struct BroncoOcrResult {
     int regionY;
     int regionWidth;
     int regionHeight;
+    int matched;                  // 1 = dictionary match, 0 = raw OCR line (no translation)
 };
 
 /// Create a new OCR engine instance.
@@ -63,8 +71,10 @@ BRONCO_OCR_API int bronco_ocr_initialize(
 /// @param regionWidths Array of region widths
 /// @param regionHeights Array of region heights
 /// @param regionCount Number of regions
-/// @param outResults Output array (caller-allocated, at least regionCount entries)
-/// @param outResultCount Number of valid results written
+/// @param outResults Output array (caller-allocated). One region can yield
+///        multiple recognized lines, so the caller must provide at least 64
+///        slots; this function writes at most 64 results (BRONCO_OCR_MAX_RESULTS).
+/// @param outResultCount Number of valid results written (0..64)
 /// @return 1 on success, 0 on failure
 BRONCO_OCR_API int bronco_ocr_process_frame(
     BroncoOcrHandle handle,

@@ -81,7 +81,7 @@ private:
     std::size_t m_cacheCapacity = 5000;
     float m_fontSize = 16.0f;
     int m_toggleHotkey = 0x77; // VK_F8
-    float m_ocrConfidenceThreshold = 60.0f;
+    float m_ocrConfidenceThreshold = 40.0f;
     int m_ocrIntervalMs = 500;
     bool m_overlayEnabled = true;
     // Follow-mouse OCR: capture a region centered on the cursor each cycle.

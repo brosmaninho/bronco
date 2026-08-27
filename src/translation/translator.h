@@ -15,8 +15,9 @@ namespace bronco::translation {
 struct TranslationResult {
     std::string original;
     std::string translated;
-    Category category;
+    Category category = Category::Items;
     bool fromCache = false;
+    bool matched = false; // true when 'translated' came from the dictionary; false for raw OCR fallback
 };
 
 /// Main translator that combines OCR results with dictionary lookups.

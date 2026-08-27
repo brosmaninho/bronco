@@ -130,29 +130,86 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
             return 1;
         }
 
-        // Translate results
-        auto translations = handle->translator.translateBatch(ocrResults);
-
-        // Store results (strings must remain valid until next call)
+        // Redesign for multi-line output: ONE OCR region can yield MANY lines
+        // (tooltip title + description + stat lines). We split each region's
+        // recognized text into individual lines here so we can attach THAT
+        // region's geometry/confidence to every emitted line (region
+        // association stays correct), and look each line up independently.
+        //
+        // CRITICAL: BroncoOcrResult.originalText/translatedText point into the
+        // std::string storage held in handle->resultStorage. If that vector
+        // reallocates while we still hold earlier elements' c_str() pointers,
+        // those pointers dangle. We therefore reserve resultStorage to the hard
+        // cap BEFORE the loop so no push_back ever reallocates, and we cap the
+        // number of emitted results at BRONCO_OCR_MAX_RESULTS so we never write
+        // past the caller-allocated array.
         handle->resultStorage.clear();
-        handle->resultStorage.reserve(translations.size());
+        handle->resultStorage.reserve(BRONCO_OCR_MAX_RESULTS);
 
         int count = 0;
-        for (std::size_t i = 0; i < translations.size() && i < ocrResults.size(); ++i)
+        for (const auto& ocr : ocrResults)
         {
-            BroncoOcrEngine::ResultStorage storage;
-            storage.original = translations[i].original;
-            storage.translated = translations[i].translated;
-            handle->resultStorage.push_back(std::move(storage));
+            if (count >= BRONCO_OCR_MAX_RESULTS) break;
 
-            outResults[count].originalText = handle->resultStorage.back().original.c_str();
-            outResults[count].translatedText = handle->resultStorage.back().translated.c_str();
-            outResults[count].confidence = ocrResults[i].confidence;
-            outResults[count].regionX = ocrResults[i].region.x;
-            outResults[count].regionY = ocrResults[i].region.y;
-            outResults[count].regionWidth = ocrResults[i].region.width;
-            outResults[count].regionHeight = ocrResults[i].region.height;
-            ++count;
+            const std::string& text = ocr.text;
+            std::size_t pos = 0;
+            while (pos <= text.size())
+            {
+                if (count >= BRONCO_OCR_MAX_RESULTS) break;
+
+                std::size_t nl = text.find('\n', pos);
+                std::string rawLine =
+                    (nl == std::string::npos) ? text.substr(pos) : text.substr(pos, nl - pos);
+
+                // Trim leading/trailing whitespace (space, tab, CR).
+                std::string line;
+                {
+                    const char* ws = " \t\r";
+                    auto s = rawLine.find_first_not_of(ws);
+                    if (s != std::string::npos)
+                    {
+                        auto e = rawLine.find_last_not_of(ws);
+                        line = rawLine.substr(s, e - s + 1);
+                    }
+                }
+
+                if (!line.empty())
+                {
+                    BroncoOcrEngine::ResultStorage storage;
+                    int matched = 0;
+
+                    auto translation = handle->translator.translate(line);
+                    if (translation.has_value())
+                    {
+                        storage.original = translation.value().original;
+                        storage.translated = translation.value().translated;
+                        matched = 1;
+                    }
+                    else
+                    {
+                        // No dictionary match: surface the raw OCR line so the
+                        // user can see OCR is working (translated == original).
+                        storage.original = line;
+                        storage.translated = line;
+                        matched = 0;
+                    }
+
+                    handle->resultStorage.push_back(std::move(storage));
+
+                    outResults[count].originalText = handle->resultStorage.back().original.c_str();
+                    outResults[count].translatedText = handle->resultStorage.back().translated.c_str();
+                    outResults[count].confidence = ocr.confidence;
+                    outResults[count].regionX = ocr.region.x;
+                    outResults[count].regionY = ocr.region.y;
+                    outResults[count].regionWidth = ocr.region.width;
+                    outResults[count].regionHeight = ocr.region.height;
+                    outResults[count].matched = matched;
+                    ++count;
+                }
+
+                if (nl == std::string::npos) break;
+                pos = nl + 1;
+            }
         }
 
         *outResultCount = count;

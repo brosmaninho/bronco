@@ -38,8 +38,12 @@ bool OcrEngine::initialize(const std::string& tessDataPath, const std::string& l
         return false;
     }
 
-    // Set page segmentation mode for sparse text (game UI)
-    m_impl->api->SetPageSegMode(tesseract::PSM_SPARSE_TEXT);
+    // Use single-block page segmentation so a multi-line tooltip is read as one
+    // clean block of lines (title + description + stat lines) rather than
+    // scattered sparse fragments. This gives us newline-separated lines that we
+    // then split and look up individually. See:
+    // https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
+    m_impl->api->SetPageSegMode(tesseract::PSM_SINGLE_BLOCK);
 
     m_impl->initialized = true;
     OutputDebugStringA("[Bronco] Tesseract OCR initialized\n");
@@ -71,13 +75,47 @@ OcrResult OcrEngine::recognize(
     OcrResult result;
     result.region = region;
 
-    if (!isReady() || !pixelData)
+    if (!isReady() || !pixelData || width <= 0 || height <= 0)
     {
         return result;
     }
 
-    // Set image data (BGRA format from DirectX)
-    m_impl->api->SetImage(pixelData, width, height, bytesPerPixel, width * bytesPerPixel);
+    // --- Image preprocessing: grayscale + invert into a 1-byte-per-pixel buffer ---
+    //
+    // The incoming buffer from DirectX is BGRA (bytesPerPixel==4, byte order
+    // B,G,R,A per pixel); we also defensively handle a 3-byte BGR layout.
+    //
+    // Tesseract 4.x/5.x expects DARK text on a LIGHT background and blends any
+    // alpha channel with white, which wrecks GW2's light-text-on-dark tooltips.
+    // So we (1) drop the alpha channel, (2) convert to grayscale, and (3) INVERT
+    // in a single pass: out = 255 - ((B+G+R)/3). This turns GW2's light-on-dark
+    // tooltip into dark-on-light, which is what Tesseract reads best.
+    // Reference: https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html
+    //
+    // The grayscale buffer is a function-local std::vector<uint8_t> kept alive
+    // until after GetUTF8Text() returns, since SetImage does not copy in all
+    // Tesseract versions.
+    const int bpp = (bytesPerPixel == 3) ? 3 : 4;
+    std::vector<uint8_t> gray(static_cast<std::size_t>(width) * static_cast<std::size_t>(height));
+
+    for (int y = 0; y < height; ++y)
+    {
+        const uint8_t* srcRow = pixelData + static_cast<std::size_t>(y) * width * bpp;
+        uint8_t* dstRow = gray.data() + static_cast<std::size_t>(y) * width;
+        for (int x = 0; x < width; ++x)
+        {
+            const uint8_t* px = srcRow + static_cast<std::size_t>(x) * bpp;
+            const int b = px[0];
+            const int g = px[1];
+            const int r = px[2];
+            const int avg = (b + g + r) / 3;
+            dstRow[x] = static_cast<uint8_t>(255 - avg); // grayscale + invert
+        }
+    }
+
+    // Feed the 1-byte-per-pixel grayscale image (bytes_per_pixel=1,
+    // bytes_per_line=width). Do NOT pass the original BGRA buffer anymore.
+    m_impl->api->SetImage(gray.data(), width, height, 1, width);
     m_impl->api->SetRectangle(0, 0, width, height);
 
     // Perform recognition
@@ -142,7 +180,11 @@ std::vector<OcrResult> OcrEngine::recognizeRegions(
 
         auto result = recognize(regionData.data(), region.width, region.height, bytesPerPixel, region);
 
-        // Only include results above confidence threshold
+        // Region-level confidence gate. Per-line confidence is not readily
+        // available from GetUTF8Text alone, so we keep a region-level
+        // MeanTextConf check but at a LOWERED threshold (default 40, set via
+        // config) so a mixed-content tooltip is not wrongly discarded whole.
+        // Also require non-empty recognized text.
         if (result.confidence >= m_confidenceThreshold && !result.text.empty())
         {
             results.push_back(std::move(result));

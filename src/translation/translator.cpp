@@ -40,6 +40,7 @@ std::optional<TranslationResult> Translator::translate(const std::string& source
         result.original = sourceText;
         result.translated = translated.value();
         result.fromCache = false;
+        result.matched = true;
 
         // Cache the result
         m_cache.put(sourceText, result);
@@ -50,18 +51,64 @@ std::optional<TranslationResult> Translator::translate(const std::string& source
     return std::nullopt;
 }
 
+namespace {
+    /// Trim leading/trailing whitespace (space, tab, CR) from a single line.
+    std::string trimLine(const std::string& line)
+    {
+        const char* ws = " \t\r";
+        auto start = line.find_first_not_of(ws);
+        if (start == std::string::npos) return std::string();
+        auto end = line.find_last_not_of(ws);
+        return line.substr(start, end - start + 1);
+    }
+} // anonymous namespace
+
 std::vector<TranslationResult> Translator::translateBatch(
     const std::vector<bronco::ocr::OcrResult>& ocrResults)
 {
     std::vector<TranslationResult> results;
-    results.reserve(ocrResults.size());
+    // Each OcrResult may contain multiple lines; reserve a modest amount.
+    results.reserve(ocrResults.size() * 4);
 
     for (const auto& ocr : ocrResults)
     {
-        auto result = translate(ocr.text);
-        if (result.has_value())
+        // Split the recognized multi-line blob into individual lines and look up
+        // each line independently. This is the core matching fix: 'Plaguelands'
+        // on its own line and the description line each resolve via the
+        // dictionary, and any unmatched line is still surfaced as raw OCR text.
+        std::size_t pos = 0;
+        const std::string& text = ocr.text;
+        while (pos <= text.size())
         {
-            results.push_back(std::move(result.value()));
+            std::size_t nl = text.find('\n', pos);
+            std::string rawLine =
+                (nl == std::string::npos) ? text.substr(pos) : text.substr(pos, nl - pos);
+
+            std::string line = trimLine(rawLine);
+            if (!line.empty())
+            {
+                auto match = translate(line);
+                if (match.has_value())
+                {
+                    TranslationResult r = std::move(match.value());
+                    r.matched = true;
+                    results.push_back(std::move(r));
+                }
+                else
+                {
+                    // No dictionary match: still surface the raw OCR line so the
+                    // user can see OCR is working. translated == original here.
+                    TranslationResult r;
+                    r.original = line;
+                    r.translated = line;
+                    r.fromCache = false;
+                    r.matched = false;
+                    results.push_back(std::move(r));
+                }
+            }
+
+            if (nl == std::string::npos) break;
+            pos = nl + 1;
         }
     }
 

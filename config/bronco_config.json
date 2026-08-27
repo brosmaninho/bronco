@@ -6,7 +6,7 @@
     "cache_capacity": 5000,
     "font_size": 16.0,
     "toggle_hotkey": 119,
-    "ocr_confidence_threshold": 60.0,
+    "ocr_confidence_threshold": 40,
     "ocr_interval_ms": 500,
     "overlay_enabled": true,
     "ocr_follow_mouse": true,

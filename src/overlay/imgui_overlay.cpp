@@ -331,7 +331,21 @@ void render(IDXGISwapChain* swapChain)
             {
                 for (const auto& entry : g_translations)
                 {
-                    ImGui::TextWrapped("%s", entry.translated.c_str());
+                    if (entry.matched)
+                    {
+                        // Dictionary match: show the translation prominently in
+                        // the default bright text color.
+                        ImGui::TextWrapped("%s", entry.translated.c_str());
+                    }
+                    else
+                    {
+                        // Unmatched line: show the raw recognized OCR text in a
+                        // dimmer gray so the user can see OCR is working even
+                        // when there is no dictionary entry for the line.
+                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+                        ImGui::TextWrapped("%s", entry.original.c_str());
+                        ImGui::PopStyleColor();
+                    }
                 }
             }
         }

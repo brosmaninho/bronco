@@ -142,7 +142,11 @@ bool OcrLoader::processFrame(
 {
     if (!m_ready.load() || !m_engineHandle) return false;
 
-    outResults.resize(regionCount);
+    // One region can produce many recognized lines, so allocate a fixed cap of
+    // BRONCO_OCR_MAX_RESULTS slots (matching the hard cap in ocr_api.cpp) rather
+    // than one slot per region. The DLL writes the actual count into
+    // resultCount, and we resize down to that on success.
+    outResults.resize(BRONCO_OCR_MAX_RESULTS);
     int resultCount = 0;
 
     int success = m_fnProcessFrame(

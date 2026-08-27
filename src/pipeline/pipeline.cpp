@@ -338,18 +338,18 @@ void Pipeline::workerThread()
             bronco::overlay::TranslatedEntry entry;
             entry.original = result.originalText ? result.originalText : "";
             entry.translated = result.translatedText ? result.translatedText : "";
+            entry.matched = (result.matched != 0);
 
             // Diagnostic logging: report the recognized text and whether a
-            // dictionary translation was found. Heuristic: a translation is
-            // considered "found" when it is non-empty AND differs from the
-            // original text; otherwise there was no dictionary match. Skip
-            // empty text to avoid log spam.
+            // dictionary translation was found. We now key this off the
+            // authoritative 'matched' flag from the OCR DLL instead of the old
+            // (translated != original) heuristic, because raw fallback entries
+            // now have translated == original by design. Skip empty text to
+            // avoid log spam.
             if (!entry.original.empty())
             {
-                bool translationFound = !entry.translated.empty() &&
-                                        entry.translated != entry.original;
                 std::string ocrMsg = "Pipeline: OCR text=\"" + entry.original + "\" -> " +
-                    (translationFound
+                    (entry.matched
                         ? ("translation found: \"" + entry.translated + "\"")
                         : std::string("no dictionary match"));
                 bronco::log::info(ocrMsg.c_str());
