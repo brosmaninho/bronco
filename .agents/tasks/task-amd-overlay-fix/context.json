@@ -1,0 +1,31 @@
+{
+  "project_type": "Windows DLL proxy for DirectX 11 (GW2 translation overlay)",
+  "language": "C++20",
+  "build_system": "CMake + vcpkg (x64-windows-static-md triplet), MSVC compiler. Uses CMakePresets.json with 'windows-msvc' preset.",
+  "test_framework": "No automated tests - manual testing only (DLL loaded by game process)",
+  "build_command": "Cannot build locally - requires Windows + MSVC + vcpkg with imgui, tesseract, sqlite3, nlohmann-json, minhook. Use AST/syntax validation only.",
+  "test_command": "N/A - no test suite, relies on static analysis of C++ code",
+  "verification_instructions": "Verify source files compile correctly by checking includes, namespace usage, and that CMakeLists.txt references all new source files. Since this is a Windows-only DLL requiring vcpkg, full build is not possible in this sandbox.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "N/A - Windows-only build (CMake + MSVC + vcpkg)",
+  "environment_constraints": "Linux sandbox - cannot build Windows DLL. Validation limited to source code correctness, consistent patterns, and CMakeLists.txt integration. No compiler available for this target.",
+  "contribution_requirements": "C++20, bronco:: namespace, #pragma once, document public functions with /// comments, follow existing code style",
+  "key_patterns": "Namespaces: bronco::proxy, bronco::hook, bronco::overlay, bronco::pipeline, bronco::ocr. Singleton pattern for Config and Pipeline. OutputDebugStringA for logging. Atomic operations for thread safety. MinHook for inline hooking. ImGui for overlay rendering. ocr_loader.cpp uses LoadLibrary pattern for dynamic DLL loading.",
+  "relevant_files": [
+    "src/CMakeLists.txt",
+    "src/dllmain.cpp",
+    "src/proxy/d3d11_proxy.cpp",
+    "src/proxy/d3d11_proxy.h",
+    "src/hook/present_hook.cpp",
+    "src/hook/present_hook.h",
+    "src/overlay/imgui_overlay.cpp",
+    "src/overlay/imgui_overlay.h",
+    "src/pipeline/pipeline.cpp",
+    "src/pipeline/pipeline.h",
+    "src/config/config.cpp",
+    "src/config/config.h",
+    "src/ocr/ocr_loader.cpp",
+    "src/ocr/ocr_loader.h"
+  ],
+  "directory_structure": "src/ contains all source. Sub-dirs: proxy/ (d3d11 forwarding), hook/ (MinHook Present interception), overlay/ (ImGui rendering), pipeline/ (OCR worker thread), config/ (JSON config singleton), ocr/ (dynamic loader for bronco_ocr.dll), cache/ (LRU cache template). Build output: d3d11.dll (proxy) + bronco_ocr.dll (heavy OCR engine)."
+}

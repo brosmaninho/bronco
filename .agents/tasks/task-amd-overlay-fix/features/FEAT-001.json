@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add file-based logger module, Present hook fallbacks for AMD GPUs, GetAsyncKeyState hotkey, visual initialization indicator, always-on overlay indicator, and make OCR pipeline optional. All seven changes from the user requirements.",
+  "status": "in_progress",
+  "steps": [
+    "1. Create src/log/logger.h: Define namespace bronco::log with functions info(const char*), error(const char*), and an internal init() function. The logger writes to bronco_log.txt in the same directory as d3d11.dll (use bronco::proxy::getOurModule() to resolve path). Each line has a timestamp in [YYYY-MM-DD HH:MM:SS.mmm] format. Also call OutputDebugStringA for each message so existing DebugView works.",
+    "2. Create src/log/logger.cpp: Implement the logger. Use a static std::ofstream opened on first call (lazy init, thread-safe via std::call_once). Get the DLL directory from bronco::proxy::getOurModule() + GetModuleFileNameW. Format timestamps with std::chrono::system_clock and localtime. Write [timestamp] [INFO] msg or [timestamp] [ERROR] msg. Flush after each write. Also call OutputDebugStringA.",
+    "3. Update src/CMakeLists.txt: Add log/logger.cpp to BRONCO_SOURCES list.",
+    "4. Update src/proxy/d3d11_proxy.cpp - Add third fallback for dummy SwapChain: In installHookViaDummySwapChain(), if factory->CreateSwapChain fails, add a fallback that uses CreateDXGIFactory1 to create a fresh factory, enumerates adapters, creates a new D3D11 device with D3D11CreateDevice (using the first hardware adapter), then creates a SwapChain on that independent device/factory. This avoids depending on the caller's device which may fail on AMD. Add bronco::log calls throughout for diagnostics.",
+    "5. Update src/proxy/d3d11_proxy.cpp - Add real SwapChain hook fallback in proxied_D3D11CreateDeviceAndSwapChain: Currently this function already hooks the real swap chain if present, which is good. But in proxied_D3D11CreateDevice, if installHookViaDummySwapChain fails (g_presentHooked still false), log the failure. The real SwapChain fallback in proxied_D3D11CreateDeviceAndSwapChain already exists. Add logging to both paths so we can diagnose which path was taken.",
+    "6. Update src/overlay/imgui_overlay.cpp - Add GetAsyncKeyState hotkey polling: In the render() function (called from hookedPresent each frame), at the very top before the visibility check, add hotkey polling using GetAsyncKeyState(VK_F8). Implement debounce: track a static bool for previous key state, only toggle on rising edge (key was not pressed last frame, is pressed this frame). This provides a WndProc-independent toggle. Keep the existing WndProc hook as well for redundancy.",
+    "7. Update src/overlay/imgui_overlay.cpp - Add initialization success indicator: Add a static variable to track first-init time (set when initialize() succeeds). In render(), if less than 5 seconds have elapsed since init, draw a small ImGui text '[Bronco] Overlay ativo - F8 para toggle' in the top-left corner with a dark background. Use ImGui::GetForegroundDrawList() or a separate transparent window.",
+    "8. Update src/overlay/imgui_overlay.cpp - Always render indicator when visible: When g_visible is true and the overlay is rendering, always draw a small indicator in the top-right corner showing a globe emoji and 'Bronco' text (or just 'Bronco' if emoji font is not loaded). This renders regardless of whether translations exist. Use ImGui drawlist to draw at a fixed screen position.",
+    "9. Update src/pipeline/pipeline.cpp - Make OCR optional: In workerThread(), if initializeModules() fails, do NOT set m_running to false. Instead, log the error and simply return from the worker thread without affecting the overlay. The overlay should continue to function (showing the indicator) even if OCR is unavailable. Change the initialize() method to not depend on the pipeline worker succeeding.",
+    "10. Replace all existing OutputDebugStringA calls in the modified files (d3d11_proxy.cpp, present_hook.cpp, imgui_overlay.cpp, pipeline.cpp, config.cpp, ocr_loader.cpp, dllmain.cpp) with bronco::log::info() or bronco::log::error() as appropriate. Include the log/logger.h header in each file."
+  ],
+  "acceptance_criteria": [
+    "src/log/logger.h and src/log/logger.cpp exist with bronco::log::info() and bronco::log::error() functions",
+    "Logger writes to bronco_log.txt with timestamps, also calls OutputDebugStringA",
+    "src/CMakeLists.txt includes log/logger.cpp in BRONCO_SOURCES",
+    "installHookViaDummySwapChain has a CreateDXGIFactory1 fallback if the first factory->CreateSwapChain fails",
+    "GetAsyncKeyState(VK_F8) polling with debounce exists in the overlay render path (called every frame from hookedPresent)",
+    "A '[Bronco] Overlay ativo - F8 para toggle' message displays for 5 seconds after initialization",
+    "A persistent 'Bronco' indicator in the top-right corner renders when the overlay is visible",
+    "Pipeline worker thread failing does NOT prevent the overlay from rendering",
+    "All OutputDebugStringA calls in modified source files are replaced with bronco::log:: calls"
+  ],
+  "verification": [
+    "Read all modified/created source files and confirm they compile syntactically (correct includes, namespace usage, matching braces, proper C++20)",
+    "Confirm src/CMakeLists.txt has log/logger.cpp in the BRONCO_SOURCES list",
+    "Confirm no remaining OutputDebugStringA calls in the files that were updated to use the logger"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

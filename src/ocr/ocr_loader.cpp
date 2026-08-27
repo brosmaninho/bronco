@@ -1,5 +1,6 @@
 #include "ocr_loader.h"
 #include "../proxy/d3d11_proxy.h"
+#include "../log/logger.h"
 
 #include <Windows.h>
 #include <string>
@@ -53,7 +54,9 @@ bool OcrLoader::loadDll()
 
     if (!m_dllHandle)
     {
-        OutputDebugStringA("[Bronco] OcrLoader: Failed to load bronco_ocr.dll\n");
+        DWORD err = GetLastError();
+        std::string msg = "OcrLoader: Failed to load bronco_ocr.dll (GetLastError=" + std::to_string(err) + ")";
+        bronco::log::error(msg.c_str());
         return false;
     }
 
@@ -71,13 +74,13 @@ bool OcrLoader::loadDll()
 
     if (!m_fnCreate || !m_fnInitialize || !m_fnProcessFrame || !m_fnShutdown || !m_fnDestroy)
     {
-        OutputDebugStringA("[Bronco] OcrLoader: Failed to resolve bronco_ocr.dll exports\n");
+        bronco::log::error("OcrLoader: Failed to resolve bronco_ocr.dll exports");
         FreeLibrary(m_dllHandle);
         m_dllHandle = nullptr;
         return false;
     }
 
-    OutputDebugStringA("[Bronco] OcrLoader: bronco_ocr.dll loaded successfully\n");
+    bronco::log::info("OcrLoader: bronco_ocr.dll loaded successfully");
     return true;
 }
 
@@ -99,7 +102,7 @@ bool OcrLoader::initialize(
     m_engineHandle = m_fnCreate();
     if (!m_engineHandle)
     {
-        OutputDebugStringA("[Bronco] OcrLoader: bronco_ocr_create failed\n");
+        bronco::log::error("OcrLoader: bronco_ocr_create failed");
         return false;
     }
 
@@ -115,14 +118,14 @@ bool OcrLoader::initialize(
 
     if (result == 0)
     {
-        OutputDebugStringA("[Bronco] OcrLoader: bronco_ocr_initialize failed\n");
+        bronco::log::error("OcrLoader: bronco_ocr_initialize failed");
         m_fnDestroy(m_engineHandle);
         m_engineHandle = nullptr;
         return false;
     }
 
     m_ready.store(true);
-    OutputDebugStringA("[Bronco] OcrLoader: Engine initialized successfully\n");
+    bronco::log::info("OcrLoader: Engine initialized successfully");
     return true;
 }
 
@@ -190,7 +193,7 @@ void OcrLoader::shutdown()
     m_fnShutdown = nullptr;
     m_fnDestroy = nullptr;
 
-    OutputDebugStringA("[Bronco] OcrLoader: Shut down and unloaded bronco_ocr.dll\n");
+    bronco::log::info("OcrLoader: Shut down and unloaded bronco_ocr.dll");
 }
 
 bool OcrLoader::isReady() const

@@ -1,9 +1,11 @@
 #include "config.h"
+#include "../log/logger.h"
 
 #include <Windows.h>
 
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <string>
 
 namespace bronco {
 
@@ -219,9 +221,12 @@ bool Config::loadInternal(const std::filesystem::path& configPath)
         std::ifstream file(configPath);
         if (!file.is_open())
         {
-            OutputDebugStringA("[Bronco] Config file not found, using defaults\n");
+            std::string msg = "Config: file not found: " + configPath.string();
+            bronco::log::info(msg.c_str());
             return false;
         }
+
+        bronco::log::info(("Config: loading from " + configPath.string()).c_str());
 
         nlohmann::json json;
         file >> json;
@@ -273,15 +278,14 @@ bool Config::loadInternal(const std::filesystem::path& configPath)
             }
         }
 
-        OutputDebugStringA("[Bronco] Configuration loaded successfully\n");
+        bronco::log::info("Config: loaded successfully");
         return true;
     }
     catch (const std::exception& e)
     {
-        std::string msg = "[Bronco] Failed to parse config: ";
+        std::string msg = "Config: failed to parse: ";
         msg += e.what();
-        msg += "\n";
-        OutputDebugStringA(msg.c_str());
+        bronco::log::error(msg.c_str());
         return false;
     }
 }

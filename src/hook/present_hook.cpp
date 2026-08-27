@@ -2,9 +2,11 @@
 #include "../overlay/imgui_overlay.h"
 #include "../config/config.h"
 #include "../pipeline/pipeline.h"
+#include "../log/logger.h"
 
 #include <MinHook.h>
 #include <mutex>
+#include <string>
 
 namespace bronco::hook {
 
@@ -31,6 +33,9 @@ namespace {
     ID3D11Device* g_device = nullptr;
     ID3D11DeviceContext* g_context = nullptr;
     bool g_overlayInitialized = false;
+
+    // F8 hotkey debounce state for GetAsyncKeyState polling
+    bool g_f8WasPressed = false;
 
     // Forward declaration
     void cleanupDeviceObjects();
@@ -59,7 +64,7 @@ namespace {
         // Re-create render target after successful resize
         if (SUCCEEDED(hr))
         {
-            OutputDebugStringA("[Bronco] SwapChain resized, render target and staging texture invalidated\n");
+            bronco::log::info("hookedResizeBuffers: SwapChain resized, render target and staging texture invalidated");
         }
 
         return hr;
@@ -71,6 +76,8 @@ namespace {
         // Initialize overlay on first call (deferred from DllMain to avoid loader lock)
         if (!g_overlayInitialized)
         {
+            bronco::log::info("hookedPresent: called for first time");
+
             // Load config on first Present (deferred from DllMain)
             bronco::Config::instance().ensureLoaded();
 
@@ -87,18 +94,42 @@ namespace {
                 if (bronco::overlay::initialize(desc.OutputWindow, g_device, g_context))
                 {
                     g_overlayInitialized = true;
+                    bronco::log::info("hookedPresent: overlay::initialize succeeded");
 
-                    // Initialize the OCR-to-overlay pipeline
-                    bronco::pipeline::instance().initialize(g_device, g_context, swapChain);
-
-                    OutputDebugStringA("[Bronco] Overlay initialized on first Present()\n");
+                    // Initialize the OCR-to-overlay pipeline (non-blocking, failure is non-fatal)
+                    if (bronco::pipeline::instance().initialize(g_device, g_context, swapChain))
+                    {
+                        bronco::log::info("hookedPresent: pipeline initialized OK");
+                    }
+                    else
+                    {
+                        bronco::log::error("hookedPresent: pipeline initialization failed (overlay continues without OCR)");
+                    }
                 }
                 else
                 {
+                    bronco::log::error("hookedPresent: overlay::initialize failed");
                     // Initialization failed, release refs
                     cleanupDeviceObjects();
                 }
             }
+            else
+            {
+                bronco::log::error("hookedPresent: GetDevice from SwapChain failed");
+            }
+        }
+
+        // Poll GetAsyncKeyState for F8 toggle (works even if WndProc hook fails)
+        if (g_overlayInitialized)
+        {
+            bool f8Pressed = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
+            if (f8Pressed && !g_f8WasPressed)
+            {
+                // Rising edge: key was not pressed last frame, is pressed this frame
+                bronco::overlay::toggleVisibility();
+                bronco::log::info("hookedPresent: F8 toggle via GetAsyncKeyState");
+            }
+            g_f8WasPressed = f8Pressed;
         }
 
         // Run the OCR pipeline (captures at configured interval, non-blocking)
@@ -168,7 +199,7 @@ void uninstall()
     g_targetPresent = nullptr;
     g_targetResizeBuffers = nullptr;
 
-    OutputDebugStringA("[Bronco] Present hook uninstalled (MinHook cleaned up)\n");
+    bronco::log::info("hook::uninstall: Present hook uninstalled (MinHook cleaned up)");
 }
 
 void hookSwapChain(IDXGISwapChain* swapChain)
@@ -197,9 +228,12 @@ void hookSwapChain(IDXGISwapChain* swapChain)
     if (!g_minhookInitialized)
     {
         MH_STATUS status = MH_Initialize();
+        std::string msg = "hookSwapChain: MH_Initialize result: " + std::to_string(static_cast<int>(status));
+        bronco::log::info(msg.c_str());
+
         if (status != MH_OK && status != MH_ERROR_ALREADY_INITIALIZED)
         {
-            OutputDebugStringA("[Bronco] MH_Initialize() failed - aborting hook\n");
+            bronco::log::error("hookSwapChain: MH_Initialize() failed - aborting hook");
             g_targetPresent = nullptr;
             g_targetResizeBuffers = nullptr;
             return;
@@ -213,9 +247,14 @@ void hookSwapChain(IDXGISwapChain* swapChain)
         reinterpret_cast<LPVOID>(&hookedPresent),
         reinterpret_cast<LPVOID*>(&g_trampolinePresent));
 
+    {
+        std::string msg = "hookSwapChain: MH_CreateHook Present result: " + std::to_string(static_cast<int>(status));
+        bronco::log::info(msg.c_str());
+    }
+
     if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] MH_CreateHook failed for Present - aborting hook\n");
+        bronco::log::error("hookSwapChain: MH_CreateHook failed for Present - aborting hook");
         g_targetPresent = nullptr;
         g_targetResizeBuffers = nullptr;
         return;
@@ -227,9 +266,14 @@ void hookSwapChain(IDXGISwapChain* swapChain)
         reinterpret_cast<LPVOID>(&hookedResizeBuffers),
         reinterpret_cast<LPVOID*>(&g_trampolineResizeBuffers));
 
+    {
+        std::string msg = "hookSwapChain: MH_CreateHook ResizeBuffers result: " + std::to_string(static_cast<int>(status));
+        bronco::log::info(msg.c_str());
+    }
+
     if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] MH_CreateHook failed for ResizeBuffers - aborting entire hook\n");
+        bronco::log::error("hookSwapChain: MH_CreateHook failed for ResizeBuffers - aborting entire hook");
         // Roll back the Present hook to avoid partial-hook state where the overlay
         // never sees resize events, leading to stale render targets on window resize.
         MH_RemoveHook(g_targetPresent);
@@ -242,9 +286,14 @@ void hookSwapChain(IDXGISwapChain* swapChain)
 
     // Enable the Present hook
     status = MH_EnableHook(g_targetPresent);
+    {
+        std::string msg = "hookSwapChain: MH_EnableHook Present result: " + std::to_string(static_cast<int>(status));
+        bronco::log::info(msg.c_str());
+    }
+
     if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] MH_EnableHook failed for Present - aborting\n");
+        bronco::log::error("hookSwapChain: MH_EnableHook failed for Present - aborting");
         MH_RemoveHook(g_targetPresent);
         MH_RemoveHook(g_targetResizeBuffers);
         g_trampolinePresent = nullptr;
@@ -256,9 +305,14 @@ void hookSwapChain(IDXGISwapChain* swapChain)
 
     // Enable the ResizeBuffers hook
     status = MH_EnableHook(g_targetResizeBuffers);
+    {
+        std::string msg = "hookSwapChain: MH_EnableHook ResizeBuffers result: " + std::to_string(static_cast<int>(status));
+        bronco::log::info(msg.c_str());
+    }
+
     if (status != MH_OK)
     {
-        OutputDebugStringA("[Bronco] MH_EnableHook failed for ResizeBuffers - aborting entire hook\n");
+        bronco::log::error("hookSwapChain: MH_EnableHook failed for ResizeBuffers - aborting entire hook");
         // Roll back everything to avoid partial-hook state
         MH_DisableHook(g_targetPresent);
         MH_RemoveHook(g_targetPresent);
@@ -270,7 +324,7 @@ void hookSwapChain(IDXGISwapChain* swapChain)
         return;
     }
 
-    OutputDebugStringA("[Bronco] Present() and ResizeBuffers() hooked via MinHook (inline hook)\n");
+    bronco::log::info("hookSwapChain: Present() and ResizeBuffers() hooked via MinHook (inline hook)");
 }
 
 } // namespace bronco::hook

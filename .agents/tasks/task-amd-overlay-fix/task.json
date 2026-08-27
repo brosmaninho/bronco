@@ -1,0 +1,7 @@
+{
+  "task_id": "task-amd-overlay-fix",
+  "task_description": "Fix overlay not working on AMD GPUs: add file logger, Present hook fallbacks, GetAsyncKeyState hotkey, visual indicators, and make OCR pipeline optional",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

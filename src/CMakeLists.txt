@@ -7,6 +7,7 @@
 
 set(BRONCO_SOURCES
     dllmain.cpp
+    log/logger.cpp
     proxy/d3d11_proxy.cpp
     hook/present_hook.cpp
     overlay/imgui_overlay.cpp

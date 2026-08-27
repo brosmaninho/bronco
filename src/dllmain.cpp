@@ -1,5 +1,6 @@
 #include "proxy/d3d11_proxy.h"
 #include "hook/present_hook.h"
+#include "log/logger.h"
 
 #include <Windows.h>
 
@@ -14,13 +15,19 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         // from System32 and resolve the 3 main function pointers + forwarded exports).
         // The Present hook is installed lazily from proxied_D3D11CreateDevice or
         // proxied_D3D11CreateDeviceAndSwapChain when the game creates a device.
+        bronco::log::info("DllMain: DLL_PROCESS_ATTACH");
+
         if (!bronco::proxy::initialize(hModule))
         {
+            bronco::log::error("DllMain: proxy initialization failed");
             return FALSE;
         }
+
+        bronco::log::info("DllMain: proxy initialized");
         break;
 
     case DLL_PROCESS_DETACH:
+        bronco::log::info("DllMain: DLL_PROCESS_DETACH");
         bronco::hook::uninstall();
         bronco::proxy::shutdown();
         break;

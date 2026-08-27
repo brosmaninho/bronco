@@ -1,5 +1,6 @@
 #include "d3d11_proxy.h"
 #include "../hook/present_hook.h"
+#include "../log/logger.h"
 
 #include <filesystem>
 #include <string>
@@ -153,7 +154,7 @@ bool initialize(HMODULE ourModule)
     g_realD3D11 = LoadLibraryW(realDllPath.c_str());
     if (!g_realD3D11)
     {
-        OutputDebugStringA("[Bronco] Failed to load real d3d11.dll from System32\n");
+        bronco::log::error("proxy::initialize: Failed to load real d3d11.dll from System32");
         return false;
     }
 
@@ -169,7 +170,7 @@ bool initialize(HMODULE ourModule)
 
     if (!g_originalCreateDevice || !g_originalCreateDeviceAndSwapChain)
     {
-        OutputDebugStringA("[Bronco] Failed to resolve D3D11 function pointers\n");
+        bronco::log::error("proxy::initialize: Failed to resolve D3D11 function pointers");
         FreeLibrary(g_realD3D11);
         g_realD3D11 = nullptr;
         return false;
@@ -178,7 +179,7 @@ bool initialize(HMODULE ourModule)
     // Resolve all remaining forwarded exports
     resolveForwardedExports();
 
-    OutputDebugStringA("[Bronco] D3D11 proxy initialized successfully\n");
+    bronco::log::info("proxy::initialize: D3D11 proxy initialized successfully");
     return true;
 }
 
@@ -198,7 +199,7 @@ void shutdown()
         entry.proc = nullptr;
     }
 
-    OutputDebugStringA("[Bronco] D3D11 proxy shut down\n");
+    bronco::log::info("proxy::shutdown: D3D11 proxy shut down");
 }
 
 FARPROC getOriginalFunction(const char* name)
@@ -225,22 +226,38 @@ namespace {
     {
         if (g_presentHooked.load()) return;
 
+        bronco::log::info("installHookViaDummySwapChain: starting");
+
         // Query IDXGIDevice from the D3D11 device
         IDXGIDevice* dxgiDevice = nullptr;
         HRESULT hr = device->QueryInterface(__uuidof(IDXGIDevice), reinterpret_cast<void**>(&dxgiDevice));
-        if (FAILED(hr) || !dxgiDevice) return;
+        if (FAILED(hr) || !dxgiDevice)
+        {
+            bronco::log::error("installHookViaDummySwapChain: QueryInterface(IDXGIDevice) failed");
+            return;
+        }
 
         // Get the DXGI adapter
         IDXGIAdapter* adapter = nullptr;
         hr = dxgiDevice->GetAdapter(&adapter);
         dxgiDevice->Release();
-        if (FAILED(hr) || !adapter) return;
+        if (FAILED(hr) || !adapter)
+        {
+            bronco::log::error("installHookViaDummySwapChain: GetAdapter failed");
+            return;
+        }
 
         // Get the DXGI factory
         IDXGIFactory* factory = nullptr;
         hr = adapter->GetParent(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&factory));
         adapter->Release();
-        if (FAILED(hr) || !factory) return;
+        if (FAILED(hr) || !factory)
+        {
+            bronco::log::error("installHookViaDummySwapChain: GetParent(IDXGIFactory) failed");
+            return;
+        }
+
+        bronco::log::info("installHookViaDummySwapChain: factory obtained OK");
 
         // Register a temporary window class for the dummy window
         WNDCLASSEXW wc = {};
@@ -256,6 +273,7 @@ namespace {
             // proceed -- we can still use the class name to create the window.
             if (GetLastError() != ERROR_CLASS_ALREADY_EXISTS)
             {
+                bronco::log::error("installHookViaDummySwapChain: RegisterClassExW failed");
                 factory->Release();
                 return;
             }
@@ -270,10 +288,13 @@ namespace {
 
         if (!dummyHwnd)
         {
+            bronco::log::error("installHookViaDummySwapChain: CreateWindowExW failed");
             UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
             factory->Release();
             return;
         }
+
+        bronco::log::info("installHookViaDummySwapChain: dummy window created OK");
 
         // Create a minimal swap chain on the dummy window
         DXGI_SWAP_CHAIN_DESC scDesc = {};
@@ -295,17 +316,101 @@ namespace {
 
         if (SUCCEEDED(hr) && tempSwapChain)
         {
+            bronco::log::info("installHookViaDummySwapChain: CreateSwapChain OK, hooking...");
+
             // Install inline hooks on Present/ResizeBuffers via MinHook.
-            // We read function pointers from the VTable, then hook the actual functions.
             bronco::hook::hookSwapChain(tempSwapChain);
             g_presentHooked.store(true);
 
             tempSwapChain->Release();
-            OutputDebugStringA("[Bronco] Present hook installed via dummy SwapChain\n");
+            bronco::log::info("installHookViaDummySwapChain: Present hook installed via dummy SwapChain");
         }
         else
         {
-            OutputDebugStringA("[Bronco] Failed to create dummy SwapChain for hook\n");
+            bronco::log::error("installHookViaDummySwapChain: CreateSwapChain failed on caller's factory, trying AMD fallback");
+
+            // --- AMD Fallback ---
+            // Create a fresh DXGI factory and independent device to avoid depending
+            // on the caller's device/factory combo which can fail on AMD GPUs.
+            IDXGIFactory1* fallbackFactory = nullptr;
+            hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&fallbackFactory));
+            if (FAILED(hr) || !fallbackFactory)
+            {
+                bronco::log::error("installHookViaDummySwapChain: AMD fallback - CreateDXGIFactory1 failed");
+                DestroyWindow(dummyHwnd);
+                UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
+                return;
+            }
+
+            bronco::log::info("installHookViaDummySwapChain: AMD fallback - CreateDXGIFactory1 OK");
+
+            // Enumerate the first hardware adapter
+            IDXGIAdapter* fallbackAdapter = nullptr;
+            hr = fallbackFactory->EnumAdapters(0, &fallbackAdapter);
+            if (FAILED(hr) || !fallbackAdapter)
+            {
+                bronco::log::error("installHookViaDummySwapChain: AMD fallback - EnumAdapters failed");
+                fallbackFactory->Release();
+                DestroyWindow(dummyHwnd);
+                UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
+                return;
+            }
+
+            bronco::log::info("installHookViaDummySwapChain: AMD fallback - adapter enumerated OK");
+
+            // Create an independent D3D11 device on this adapter
+            D3D_FEATURE_LEVEL featureLevel = D3D_FEATURE_LEVEL_11_0;
+            D3D_FEATURE_LEVEL featureLevels[] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_1 };
+            ID3D11Device* fallbackDevice = nullptr;
+            ID3D11DeviceContext* fallbackContext = nullptr;
+
+            hr = D3D11CreateDevice(
+                fallbackAdapter,
+                D3D_DRIVER_TYPE_UNKNOWN, // Must use UNKNOWN when specifying an adapter
+                nullptr,
+                0,
+                featureLevels,
+                2,
+                D3D11_SDK_VERSION,
+                &fallbackDevice,
+                &featureLevel,
+                &fallbackContext);
+
+            fallbackAdapter->Release();
+
+            if (FAILED(hr) || !fallbackDevice)
+            {
+                bronco::log::error("installHookViaDummySwapChain: AMD fallback - D3D11CreateDevice failed");
+                fallbackFactory->Release();
+                DestroyWindow(dummyHwnd);
+                UnregisterClassW(L"BroncoDummyHookWnd", wc.hInstance);
+                return;
+            }
+
+            bronco::log::info("installHookViaDummySwapChain: AMD fallback - D3D11CreateDevice OK");
+
+            // Create swap chain on the fallback factory + device
+            IDXGISwapChain* fallbackSwapChain = nullptr;
+            hr = fallbackFactory->CreateSwapChain(fallbackDevice, &scDesc, &fallbackSwapChain);
+            fallbackFactory->Release();
+
+            if (SUCCEEDED(hr) && fallbackSwapChain)
+            {
+                bronco::log::info("installHookViaDummySwapChain: AMD fallback - CreateSwapChain OK, hooking...");
+
+                bronco::hook::hookSwapChain(fallbackSwapChain);
+                g_presentHooked.store(true);
+
+                fallbackSwapChain->Release();
+                bronco::log::info("installHookViaDummySwapChain: AMD fallback - Present hook installed");
+            }
+            else
+            {
+                bronco::log::error("installHookViaDummySwapChain: AMD fallback - CreateSwapChain also failed");
+            }
+
+            fallbackContext->Release();
+            fallbackDevice->Release();
         }
 
         // Clean up dummy window
@@ -330,6 +435,8 @@ HRESULT WINAPI proxied_D3D11CreateDevice(
     D3D_FEATURE_LEVEL* pFeatureLevel,
     ID3D11DeviceContext** ppImmediateContext)
 {
+    bronco::log::info("proxied_D3D11CreateDevice: called");
+
     HRESULT hr = bronco::proxy::g_originalCreateDevice(
         pAdapter, DriverType, Software, Flags,
         pFeatureLevels, FeatureLevels, SDKVersion,
@@ -339,7 +446,13 @@ HRESULT WINAPI proxied_D3D11CreateDevice(
     // by creating a temporary SwapChain to access the VTable.
     if (SUCCEEDED(hr) && ppDevice && *ppDevice && !g_presentHooked.load())
     {
+        bronco::log::info("proxied_D3D11CreateDevice: device created, attempting hook install");
         installHookViaDummySwapChain(*ppDevice);
+
+        if (!g_presentHooked.load())
+        {
+            bronco::log::error("proxied_D3D11CreateDevice: installHookViaDummySwapChain failed, hook not installed");
+        }
     }
 
     return hr;
@@ -359,6 +472,8 @@ HRESULT WINAPI proxied_D3D11CreateDeviceAndSwapChain(
     D3D_FEATURE_LEVEL* pFeatureLevel,
     ID3D11DeviceContext** ppImmediateContext)
 {
+    bronco::log::info("proxied_D3D11CreateDeviceAndSwapChain: called");
+
     HRESULT hr = bronco::proxy::g_originalCreateDeviceAndSwapChain(
         pAdapter, DriverType, Software, Flags,
         pFeatureLevels, FeatureLevels, SDKVersion,
@@ -368,8 +483,10 @@ HRESULT WINAPI proxied_D3D11CreateDeviceAndSwapChain(
     // If swap chain was created, hook Present()
     if (SUCCEEDED(hr) && ppSwapChain && *ppSwapChain && !g_presentHooked.load())
     {
+        bronco::log::info("proxied_D3D11CreateDeviceAndSwapChain: real swap chain available, hooking directly");
         bronco::hook::hookSwapChain(*ppSwapChain);
         g_presentHooked.store(true);
+        bronco::log::info("proxied_D3D11CreateDeviceAndSwapChain: hook installed via real SwapChain");
     }
 
     return hr;

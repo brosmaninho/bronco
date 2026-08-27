@@ -1,5 +1,6 @@
 #include "imgui_overlay.h"
 #include "../config/config.h"
+#include "../log/logger.h"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -29,6 +30,9 @@ namespace {
     HWND g_hwnd = nullptr;
     WNDPROC g_originalWndProc = nullptr;
 
+    // Timestamp of overlay initialization (for welcome message)
+    ULONGLONG g_initTimestamp = 0;
+
     // Our window procedure that intercepts input for ImGui and handles hotkeys
     LRESULT WINAPI hookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -43,10 +47,27 @@ namespace {
             }
         }
 
-        // Let ImGui handle input
-        if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-            return 0;
+        // Only let ImGui process input when the overlay is visible AND ImGui
+        // actually wants to capture the input (e.g., mouse over an ImGui window).
+        // For a passive overlay that does not have interactive widgets, we should
+        // NOT consume mouse events - let them pass through to the game always.
+        // Only forward keyboard input to ImGui when visible.
+        if (g_visible.load() != 0)
+        {
+            // Forward keyboard messages to ImGui but NEVER consume mouse messages.
+            // This ensures game camera rotation (right-click) and target selection
+            // (left-click) always work.
+            bool isMouseMessage = (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) ||
+                                  msg == WM_NCMOUSEMOVE || msg == WM_NCLBUTTONDOWN ||
+                                  msg == WM_NCRBUTTONDOWN;
 
+            if (!isMouseMessage)
+            {
+                ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+            }
+        }
+
+        // Always pass ALL messages (including mouse) to the game
         return CallWindowProcW(g_originalWndProc, hWnd, msg, wParam, lParam);
     }
 
@@ -82,8 +103,13 @@ bool initialize(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context)
     // Initialize ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    bronco::log::info("overlay::initialize: ImGui context created");
+
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+    // Disable ImGui mouse/keyboard capture so input always reaches the game
+    io.WantCaptureMouse = false;
+    io.WantCaptureKeyboard = false;
 
     // Set dark style
     ImGui::StyleColorsDark();
@@ -99,14 +125,22 @@ bool initialize(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context)
     g_originalWndProc = reinterpret_cast<WNDPROC>(
         SetWindowLongPtrW(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(hookedWndProc)));
 
+    bronco::log::info("overlay::initialize: WndProc hooked");
+
+    // Record init timestamp for welcome message
+    g_initTimestamp = GetTickCount64();
+
     g_initialized.store(true);
-    OutputDebugStringA("[Bronco] ImGui overlay initialized\n");
+    bronco::log::info("overlay::initialize: ImGui overlay initialized");
     return true;
 }
 
 void render(IDXGISwapChain* swapChain)
 {
-    if (!g_initialized.load() || !g_visible.load()) return;
+    if (!g_initialized.load()) return;
+
+    // If not visible, do not render anything (respect toggle)
+    if (!g_visible.load()) return;
 
     // Ensure render target exists (recreated after ResizeBuffers invalidation)
     if (!g_renderTargetView)
@@ -121,7 +155,48 @@ void render(IDXGISwapChain* swapChain)
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // Render translations
+    // Ensure ImGui does not capture mouse/keyboard from the game
+    ImGuiIO& io = ImGui::GetIO();
+    io.WantCaptureMouse = false;
+    io.WantCaptureKeyboard = false;
+
+    // --- Always draw "Bronco v0.3" indicator in top-right corner ---
+    {
+        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+        const char* indicator = "Bronco v0.3";
+        ImVec2 textSize = ImGui::CalcTextSize(indicator);
+        float padding = 6.0f;
+        float x = io.DisplaySize.x - textSize.x - padding - 10.0f;
+        float y = 10.0f;
+
+        // Semi-transparent green text
+        drawList->AddText(ImVec2(x, y), IM_COL32(0, 255, 0, 128), indicator);
+    }
+
+    // --- Welcome message for the first 5 seconds ---
+    {
+        ULONGLONG elapsed = GetTickCount64() - g_initTimestamp;
+        if (elapsed < 5000)
+        {
+            ImDrawList* drawList = ImGui::GetForegroundDrawList();
+            const char* welcomeMsg = "[Bronco] Overlay ativo! Pressione F8 para toggle.";
+            ImVec2 textSize = ImGui::CalcTextSize(welcomeMsg);
+            float x = (io.DisplaySize.x - textSize.x) * 0.5f;
+            float y = 40.0f;
+
+            // Dark background
+            drawList->AddRectFilled(
+                ImVec2(x - 8.0f, y - 4.0f),
+                ImVec2(x + textSize.x + 8.0f, y + textSize.y + 4.0f),
+                IM_COL32(20, 20, 20, 200),
+                4.0f);
+
+            // White text
+            drawList->AddText(ImVec2(x, y), IM_COL32(255, 255, 255, 255), welcomeMsg);
+        }
+    }
+
+    // --- Render translations ---
     {
         std::lock_guard<std::mutex> lock(g_translationMutex);
 
@@ -129,7 +204,7 @@ void render(IDXGISwapChain* swapChain)
         {
             // Create a transparent fullscreen window for overlays
             ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::SetNextWindowSize(io.DisplaySize);
             ImGui::Begin("##BroncoOverlay",
                 nullptr,
                 ImGuiWindowFlags_NoTitleBar |
@@ -187,7 +262,7 @@ void shutdown()
     cleanupRenderTarget();
 
     g_initialized.store(false);
-    OutputDebugStringA("[Bronco] ImGui overlay shut down\n");
+    bronco::log::info("overlay::shutdown: ImGui overlay shut down");
 }
 
 void invalidateRenderTarget()

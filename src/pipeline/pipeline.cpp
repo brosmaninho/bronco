@@ -2,6 +2,7 @@
 #include "../config/config.h"
 #include "../ocr/ocr_loader.h"
 #include "../overlay/imgui_overlay.h"
+#include "../log/logger.h"
 
 #include <chrono>
 
@@ -28,12 +29,12 @@ namespace {
             config.ocrConfidenceThreshold(),
             static_cast<int>(config.cacheCapacity())))
         {
-            OutputDebugStringA("[Bronco] Pipeline: Failed to initialize OCR loader\n");
+            bronco::log::error("Pipeline: Failed to initialize OCR loader");
             return false;
         }
 
         g_modulesInitialized = true;
-        OutputDebugStringA("[Bronco] Pipeline: OCR loader initialized (bronco_ocr.dll loaded)\n");
+        bronco::log::info("Pipeline: OCR loader initialized (bronco_ocr.dll loaded)");
         return true;
     }
 } // anonymous namespace
@@ -71,7 +72,7 @@ bool Pipeline::initialize(ID3D11Device* device, ID3D11DeviceContext* context, ID
     HRESULT hr = m_device->CreateTexture2D(&stagingDesc, nullptr, &m_stagingTexture);
     if (FAILED(hr))
     {
-        OutputDebugStringA("[Bronco] Pipeline: Failed to create staging texture\n");
+        bronco::log::error("Pipeline: Failed to create staging texture");
         return false;
     }
 
@@ -83,7 +84,7 @@ bool Pipeline::initialize(ID3D11Device* device, ID3D11DeviceContext* context, ID
     m_worker = std::thread(&Pipeline::workerThread, this);
 
     m_lastCaptureTime = GetTickCount64();
-    OutputDebugStringA("[Bronco] Pipeline: Initialized and worker thread started\n");
+    bronco::log::info("Pipeline: Initialized and worker thread started");
     return true;
 }
 
@@ -111,7 +112,7 @@ void Pipeline::shutdown()
     m_device = nullptr;
     m_context = nullptr;
 
-    OutputDebugStringA("[Bronco] Pipeline: Shut down\n");
+    bronco::log::info("Pipeline: Shut down");
 }
 
 void Pipeline::onPresent(IDXGISwapChain* swapChain)
@@ -148,16 +149,17 @@ void Pipeline::invalidateStagingTexture()
         m_stagingTexture->Release();
         m_stagingTexture = nullptr;
     }
-    OutputDebugStringA("[Bronco] Pipeline: Staging texture invalidated (resize)\n");
+    bronco::log::info("Pipeline: Staging texture invalidated (resize)");
 }
 
 void Pipeline::workerThread()
 {
-    // Initialize OCR via the loader on this thread (avoids blocking render thread)
+    // Initialize OCR via the loader on this thread (avoids blocking render thread).
+    // If this fails, the worker exits but does NOT set m_running to false.
+    // The overlay continues to function without OCR.
     if (!initializeModules())
     {
-        OutputDebugStringA("[Bronco] Pipeline: Worker thread exiting - module init failed\n");
-        m_running.store(false);
+        bronco::log::error("Pipeline: Worker thread exiting - module init failed (overlay continues without OCR)");
         return;
     }
 
@@ -274,13 +276,13 @@ bool Pipeline::captureBackbuffer(IDXGISwapChain* swapChain)
         if (FAILED(hr))
         {
             backBuffer->Release();
-            OutputDebugStringA("[Bronco] Pipeline: Failed to recreate staging texture after resize\n");
+            bronco::log::error("Pipeline: Failed to recreate staging texture after resize");
             return false;
         }
 
         m_captureWidth = bbWidth;
         m_captureHeight = bbHeight;
-        OutputDebugStringA("[Bronco] Pipeline: Staging texture recreated for new dimensions\n");
+        bronco::log::info("Pipeline: Staging texture recreated for new dimensions");
     }
 
     // Copy backbuffer to staging texture
