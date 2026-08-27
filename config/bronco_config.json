@@ -9,6 +9,7 @@
     "toggle_hotkey": 119,
     "ocr_confidence_threshold": 40,
     "ocr_interval_ms": 500,
+    "overlay_hold_ms": 5000,
     "overlay_enabled": true,
     "ocr_follow_mouse": true,
     "ocr_follow_width": 500,

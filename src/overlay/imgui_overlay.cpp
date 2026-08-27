@@ -47,6 +47,15 @@ namespace {
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
 
+    // Timestamp (GetTickCount64 ms) of the last cycle that stored a NON-EMPTY
+    // matched set into g_translations. Used to make the displayed translations
+    // "sticky": a zero-match OCR cycle does NOT overwrite g_translations, so the
+    // panel keeps showing the last matched tooltip instead of flickering to
+    // empty and back. The held content is only cleared once the hold timeout
+    // (Config::overlayHoldMs) has elapsed since this timestamp. Guarded by
+    // g_translationMutex.
+    ULONGLONG g_lastNonEmptyTick = 0;
+
     // D3D11 resources
     ID3D11Device* g_device = nullptr;
     ID3D11DeviceContext* g_context = nullptr;
@@ -523,8 +532,42 @@ void invalidateRenderTarget()
 
 void setTranslations(const std::vector<TranslatedEntry>& entries)
 {
+    // Determine whether this cycle produced at least one matched entry with
+    // non-empty translated text. This mirrors the display filter in render()
+    // (entry.matched && !entry.translated.empty()), so "has content" here means
+    // the same thing the user would actually see.
+    bool hasMatched = false;
+    for (const auto& entry : entries)
+    {
+        if (entry.matched && !entry.translated.empty())
+        {
+            hasMatched = true;
+            break;
+        }
+    }
+
+    const ULONGLONG now = GetTickCount64();
+    const ULONGLONG holdMs =
+        static_cast<ULONGLONG>(bronco::Config::instance().overlayHoldMs());
+
     std::lock_guard<std::mutex> lock(g_translationMutex);
-    g_translations = entries;
+
+    if (hasMatched)
+    {
+        // New matched content this cycle: replace and refresh the hold timer.
+        g_translations = entries;
+        g_lastNonEmptyTick = now;
+        return;
+    }
+
+    // Zero-match cycle: keep the previously displayed content so the panel does
+    // not flicker to empty. Only clear it once the hold timeout has elapsed
+    // since the last non-empty cycle, so a stale tooltip eventually disappears
+    // after the user moves away from a skill.
+    if (!g_translations.empty() && (now - g_lastNonEmptyTick) >= holdMs)
+    {
+        g_translations.clear();
+    }
 }
 
 void toggleVisibility()

@@ -85,10 +85,47 @@ std::optional<std::string> formatFact(const nlohmann::json& fact)
     const std::string type = jsonStr(fact, "type");
     const std::string label = factLabel(fact);
 
-    if (type == "Damage" || type == "Heal")
+    if (type == "Damage")
     {
-        // Damage/Heal: label plus optional hit count "(xN)" when > 1.
+        // Damage: the GW2 API does not provide an absolute damage number, only a
+        // damage multiplier (dmg_multiplier) and a hit_count. Surface the
+        // multiplier value so the user sees a meaningful figure instead of a
+        // bare label. Format:
+        //   both present:        "Dano: <mult>x (<hits> golpes)"
+        //   multiplier only:     "Dano: <mult>x"
+        //   hit_count>1 only:    "Dano (x<hits>)"
+        //   neither:             "Dano"
         std::string line = label.empty() ? std::string("Dano") : label;
+
+        const bool hasMult = hasNumber(fact, "dmg_multiplier");
+
+        long long hits = 1;
+        if (hasNumber(fact, "hit_count"))
+        {
+            hits = fact["hit_count"].get<long long>();
+        }
+        const bool multiHit = hits > 1;
+
+        if (hasMult)
+        {
+            line += ": " + numToStr(fact["dmg_multiplier"]) + "x";
+            if (multiHit)
+            {
+                line += " (" + std::to_string(hits) + " golpes)";
+            }
+        }
+        else if (multiHit)
+        {
+            line += " (x" + std::to_string(hits) + ")";
+        }
+        return line;
+    }
+
+    if (type == "Heal")
+    {
+        // Heal: label plus optional hit count "(xN)" when > 1. Heal facts carry
+        // a hit_count but never a dmg_multiplier.
+        std::string line = label.empty() ? std::string("Cura") : label;
         if (hasNumber(fact, "hit_count"))
         {
             long long hits = fact["hit_count"].get<long long>();

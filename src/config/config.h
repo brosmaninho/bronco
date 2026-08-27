@@ -45,6 +45,7 @@ public:
     int toggleHotkey() const;
     float ocrConfidenceThreshold() const;
     int ocrIntervalMs() const;
+    int overlayHoldMs() const;
     bool overlayEnabled() const;
     bool ocrFollowMouse() const;
     int ocrFollowWidth() const;
@@ -85,6 +86,10 @@ private:
     int m_toggleHotkey = 0x77; // VK_F8
     float m_ocrConfidenceThreshold = 40.0f;
     int m_ocrIntervalMs = 500;
+    // How long (ms) a matched tooltip stays on the overlay after the last
+    // non-empty matched OCR cycle, so a zero-match cycle does not blank the
+    // panel and cause flicker. Only cleared once this timeout elapses.
+    int m_overlayHoldMs = 5000;
     bool m_overlayEnabled = true;
     // Follow-mouse OCR: capture a region centered on the cursor each cycle.
     // This is the default because GW2 tooltips render where the mouse is.

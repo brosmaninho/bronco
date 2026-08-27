@@ -65,6 +65,7 @@ bool Config::save()
         json["toggle_hotkey"] = m_toggleHotkey;
         json["ocr_confidence_threshold"] = m_ocrConfidenceThreshold;
         json["ocr_interval_ms"] = m_ocrIntervalMs;
+        json["overlay_hold_ms"] = m_overlayHoldMs;
         json["overlay_enabled"] = m_overlayEnabled;
         json["ocr_follow_mouse"] = m_ocrFollowMouse;
         json["ocr_follow_width"] = m_ocrFollowWidth;
@@ -162,6 +163,12 @@ int Config::ocrIntervalMs() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     return m_ocrIntervalMs;
+}
+
+int Config::overlayHoldMs() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_overlayHoldMs;
 }
 
 bool Config::overlayEnabled() const
@@ -289,6 +296,9 @@ bool Config::loadInternal(const std::filesystem::path& configPath)
 
         if (json.contains("ocr_interval_ms"))
             m_ocrIntervalMs = json["ocr_interval_ms"].get<int>();
+
+        if (json.contains("overlay_hold_ms"))
+            m_overlayHoldMs = json["overlay_hold_ms"].get<int>();
 
         if (json.contains("overlay_enabled"))
             m_overlayEnabled = json["overlay_enabled"].get<bool>();
