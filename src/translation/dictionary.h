@@ -26,10 +26,26 @@ public:
     /// @return true if loaded successfully
     bool loadFromFile(const std::filesystem::path& filePath);
 
-    /// Look up a translation by source text (case-insensitive).
+    /// Look up a translation by source text (case-insensitive, exact match).
+    /// The source is normalized (lowercased, whitespace-collapsed, trimmed) and
+    /// looked up as a whole-string key in the entry map.
     /// @param sourceText The English text to translate
     /// @return Translated text if found, std::nullopt otherwise
     std::optional<std::string> lookup(const std::string& sourceText) const;
+
+    /// Fuzzy substring lookup for imperfect OCR text.
+    /// Normalizes the source text (lowercase + whitespace-collapse + trim), then
+    /// scans every entry and finds the entry whose stored (already-normalized)
+    /// key is a substring of the normalized source OR whose key contains the
+    /// normalized source. Only keys of normalized length >= 4 characters are
+    /// considered (to avoid spurious matches on tiny tokens). Among all matches
+    /// the entry with the LONGEST key wins (most specific match).
+    ///
+    /// This tolerates OCR reading a known term (e.g. a skill name) with extra
+    /// surrounding noise or different spacing/newlines than the dictionary key.
+    /// @param sourceText The (possibly noisy) OCR text to translate
+    /// @return Translated text of the longest matching key, std::nullopt otherwise
+    std::optional<std::string> lookupContains(const std::string& sourceText) const;
 
     /// Get the number of entries in this dictionary.
     std::size_t size() const;
