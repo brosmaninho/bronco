@@ -23,22 +23,25 @@ namespace {
 
     // Snapshot of whether the overlay is currently "unlocked" for mouse
     // interaction. The overlay is 100% passive by default and only captures the
-    // mouse while the ALT modifier is held AND the overlay is visible. This
+    // mouse while the drag modifier (Right ALT or Right Ctrl) is held AND the
+    // overlay is visible. This
     // atomic is written once per frame from render() (on the render thread) and
     // read from hookedWndProc (on the window thread), giving the WndProc a
     // stable, self-consistent value. When false, no mouse message is EVER
     // consumed, so the game always keeps full mouse control; the previous model
     // (consume whenever the cursor was over the panel) still fought the game for
-    // the mouse, so it was replaced by this ALT-gated model.
+    // the mouse, so it was replaced by this modifier-gated model.
     std::atomic<bool> g_captureMouse{false};
 
-    /// Returns true when the ALT modifier key is currently held down. The high
-    /// bit of GetKeyState indicates the key is pressed. VK_MENU is the virtual
-    /// key for either ALT key. This is the single source of truth for the
-    /// "unlock" gesture used by both render() and hookedWndProc.
-    bool isAltHeld()
+    /// Returns true when the drag modifier is currently held down. The drag
+    /// modifier is the RIGHT ALT (VK_RMENU) OR the RIGHT CTRL (VK_RCONTROL)
+    /// key; both are side-specific virtual keys so the left ALT/Ctrl (commonly
+    /// used by the game itself) do not trigger panel dragging. The high bit of
+    /// GetKeyState indicates the key is pressed. This is the single source of
+    /// truth for the "unlock" gesture used by both render() and hookedWndProc.
+    bool isDragModifierHeld()
     {
-        return (GetKeyState(VK_MENU) & 0x8000) != 0;
+        return ((GetKeyState(VK_RMENU) & 0x8000) != 0) || ((GetKeyState(VK_RCONTROL) & 0x8000) != 0);
     }
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
@@ -125,14 +128,15 @@ namespace {
             msg == WM_NCRBUTTONDOWN;
 
         // The overlay is "unlocked" only while it is visible AND the user is
-        // holding ALT. This is the single gate that decides whether we are
-        // allowed to capture the mouse for the draggable panel. When it is
-        // false the overlay is 100% passive and NEVER consumes a mouse message,
-        // so the game always keeps full mouse control (this is the whole point
-        // of the fix). We read the per-frame atomic snapshot from render() and
-        // also re-check ALT live here so a release of ALT is honored instantly.
+        // holding the drag modifier (Right ALT or Right Ctrl). This is the
+        // single gate that decides whether we are allowed to capture the mouse
+        // for the draggable panel. When it is false the overlay is 100% passive
+        // and NEVER consumes a mouse message, so the game always keeps full
+        // mouse control (this is the whole point of the fix). We read the
+        // per-frame atomic snapshot from render() and also re-check the modifier
+        // live here so a release of the modifier is honored instantly.
         const bool unlocked =
-            (g_visible.load() != 0) && g_captureMouse.load() && isAltHeld();
+            (g_visible.load() != 0) && g_captureMouse.load() && isDragModifierHeld();
 
         if (unlocked)
         {
@@ -274,11 +278,11 @@ void render(IDXGISwapChain* swapChain)
     ImGuiIO& io = ImGui::GetIO();
 
     // The panel is passive by default: it is only movable / interactive while
-    // the user holds ALT ("unlocked"). This is read once here and used both to
-    // choose the window flags below and to update the per-frame capture
-    // snapshot after the window is built, so it must be declared in the
-    // function scope (not inside the window block).
-    const bool altHeld = isAltHeld();
+    // the user holds the drag modifier (Right ALT or Right Ctrl) ("unlocked").
+    // This is read once here and used both to choose the window flags below and
+    // to update the per-frame capture snapshot after the window is built, so it
+    // must be declared in the function scope (not inside the window block).
+    const bool dragModifierHeld = isDragModifierHeld();
 
     // --- Draggable Bronco window ---
     // A real ImGui window with a title bar so the user can drag it anywhere.
@@ -294,12 +298,12 @@ void render(IDXGISwapChain* swapChain)
         // Semi-transparent background for this window only.
         ImGui::SetNextWindowBgAlpha(0.65f);
 
-        // When ALT is not held (locked) we add NoMove + NoInputs so the window
-        // cannot be dragged and swallows no mouse input, keeping the overlay
-        // 100% passive. When ALT is held we use the movable flags so the title
-        // bar can be dragged.
+        // When the drag modifier is not held (locked) we add NoMove + NoInputs
+        // so the window cannot be dragged and swallows no mouse input, keeping
+        // the overlay 100% passive. When the drag modifier is held we use the
+        // movable flags so the title bar can be dragged.
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
-        if (!altHeld)
+        if (!dragModifierHeld)
         {
             windowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs;
         }
@@ -317,7 +321,7 @@ void render(IDXGISwapChain* swapChain)
 
             // Persistent hint so the user always knows how to move the panel.
             ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                "Segure ALT para mover o painel. F8 liga/desliga.");
+                "Segure ALT Direito ou Ctrl Direito para mover o painel. F8 liga/desliga.");
             ImGui::Separator();
 
             std::lock_guard<std::mutex> lock(g_translationMutex);
@@ -354,11 +358,12 @@ void render(IDXGISwapChain* swapChain)
 
     // Snapshot the "unlocked" state for this frame so hookedWndProc (running on
     // the window thread) reads a stable value. The panel is only unlocked for
-    // mouse capture while the ALT modifier is held; otherwise the overlay is
-    // fully passive and hookedWndProc will never consume a mouse message. The
-    // WndProc also re-checks ALT live, so releasing ALT is honored immediately
-    // even before the next frame updates this atomic.
-    g_captureMouse.store(altHeld);
+    // mouse capture while the drag modifier (Right ALT or Right Ctrl) is held;
+    // otherwise the overlay is fully passive and hookedWndProc will never
+    // consume a mouse message. The WndProc also re-checks the modifier live, so
+    // releasing it is honored immediately even before the next frame updates
+    // this atomic.
+    g_captureMouse.store(dragModifierHeld);
 
     // Render ImGui
     ImGui::Render();

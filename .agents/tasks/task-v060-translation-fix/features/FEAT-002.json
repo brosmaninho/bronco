@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Change the panel-drag modifier from either ALT (VK_MENU) to specifically RIGHT ALT (VK_RMENU) OR RIGHT CTRL (VK_RCONTROL). This is the user's second explicit request. All changes are in src/overlay/imgui_overlay.cpp. Independent of FEAT-001 except both touch this file; if serialized, apply after FEAT-001 to avoid edit conflicts on the render() body.",
+  "status": "completed",
+  "steps": [
+    "In src/overlay/imgui_overlay.cpp, rename the anonymous-namespace helper isAltHeld() to isDragModifierHeld() and change its body to: return ((GetKeyState(VK_RMENU) & 0x8000) != 0) || ((GetKeyState(VK_RCONTROL) & 0x8000) != 0); Update its doc comment to describe RIGHT ALT (VK_RMENU) or RIGHT CTRL (VK_RCONTROL) as the drag modifier (side-specific virtual keys).",
+    "Update ALL call sites of isAltHeld(): in render() the local 'const bool altHeld = isAltHeld();' should call isDragModifierHeld() (rename the local for clarity, e.g. dragModifierHeld, and update its uses in the windowFlags branch and the g_captureMouse.store(...) call); in hookedWndProc() the 'unlocked' predicate that calls isAltHeld() must call isDragModifierHeld(). Confirm there are no other references to isAltHeld remaining (grep).",
+    "Update the on-screen persistent hint text in render() from 'Segure ALT para mover o painel. F8 liga/desliga.' to 'Segure ALT Direito ou Ctrl Direito para mover o painel. F8 liga/desliga.' (keep the F8 hint; match the user's requested wording 'Segure ALT Direito ou Ctrl Direito para mover o painel').",
+    "Leave the per-frame atomic snapshot g_captureMouse and its read in hookedWndProc unchanged in mechanism - it is simply fed by the new predicate. Do not alter the mouse-capture gating logic otherwise.",
+    "Re-read render() and hookedWndProc() end to end after editing: confirm the renamed local is declared in function scope before its first use, all references updated, no leftover isAltHeld identifier, VK_RMENU and VK_RCONTROL are used (both defined in Windows.h), braces balanced."
+  ],
+  "acceptance_criteria": [
+    "isAltHeld no longer exists; isDragModifierHeld exists and returns true when VK_RMENU OR VK_RCONTROL high bit is set.",
+    "render() and hookedWndProc() both use isDragModifierHeld; no reference to isAltHeld remains anywhere.",
+    "The on-screen hint reads 'Segure ALT Direito ou Ctrl Direito para mover o painel. F8 liga/desliga.'",
+    "g_captureMouse snapshot mechanism is unchanged; only the predicate feeding it changed."
+  ],
+  "verification": [
+    "Cannot build locally (Windows/MSVC/vcpkg). Re-read the two functions to confirm the renamed local is in scope, all call sites updated, no dangling isAltHeld.",
+    "grep -n 'isAltHeld' src/overlay/imgui_overlay.cpp returns nothing; grep for isDragModifierHeld, VK_RMENU, VK_RCONTROL confirms usage; grep for the exact new hint string confirms the wording."
+  ],
+  "blocked_reason": null,
+  "findings": "Changed drag modifier in src/overlay/imgui_overlay.cpp only. Renamed anon-namespace helper isAltHeld() -> isDragModifierHeld() with body 'return ((GetKeyState(VK_RMENU) & 0x8000) != 0) || ((GetKeyState(VK_RCONTROL) & 0x8000) != 0);' and updated its doc comment to describe RIGHT ALT (VK_RMENU) OR RIGHT CTRL (VK_RCONTROL) side-specific virtual keys. Updated all call sites: render() local renamed const bool dragModifierHeld = isDragModifierHeld(); declared in function scope before first use, and used in the windowFlags branch (if (!dragModifierHeld)) and the g_captureMouse.store(dragModifierHeld) call; hookedWndProc() 'unlocked' predicate now calls isDragModifierHeld(). Hint text changed to 'Segure ALT Direito ou Ctrl Direito para mover o painel. F8 liga/desliga.'. g_captureMouse atomic snapshot mechanism unchanged (only predicate feeding it changed). FEAT-001 matched-based rendering left untouched. Verified via grep: no isAltHeld/altHeld/VK_MENU remain; isDragModifierHeld/VK_RMENU/VK_RCONTROL/new hint present. Braces balanced (52/52). Cannot compile locally (Windows/MSVC/vcpkg); CI builds on tag push."
+}
