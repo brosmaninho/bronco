@@ -38,9 +38,10 @@ import gw2_api  # noqa: E402
 import translator  # noqa: E402
 
 TOOL_DIR = Path(__file__).resolve().parent
+REPO_ROOT = TOOL_DIR.parent.parent
 DEFAULT_CACHE_DIR = TOOL_DIR / "cache"
-DEFAULT_OUTPUT_DIR = Path("data/dictionaries/pt-br")
-DEFAULT_SKILLDATA_OUTPUT_DIR = Path("data/skilldata/pt-br")
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "data/dictionaries/pt-br"
+DEFAULT_SKILLDATA_OUTPUT_DIR = REPO_ROOT / "data/skilldata/pt-br"
 VERSION = "1.0.0"
 LOCALE = "pt-br"
 

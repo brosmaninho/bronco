@@ -63,6 +63,10 @@ config/bronco_config.local.json
 # Dictionary generator cache (raw GW2 API data, translation cache, Argos model)
 tools/dictionary-generator/cache/
 
+# Stray output dir if the generator is ever run from inside its own tool dir
+# (real outputs must land at repo-root data/); guards against accidental commits.
+tools/dictionary-generator/data/
+
 # Python virtualenvs (dictionary generator setup)
 .venv/
 tools/dictionary-generator/.venv/
