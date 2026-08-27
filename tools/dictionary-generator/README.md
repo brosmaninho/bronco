@@ -96,6 +96,7 @@ python3 tools/dictionary-generator/generate_dictionaries.py --category items
 | `--cache-dir DIR` | Diretorio de cache (padrao: `tools/dictionary-generator/cache`). |
 | `--min-delay S` | Delay minimo entre requests (rate limit, padrao 0.25s). |
 | `--no-translate` | Nao traduz; `translated` recebe o ingles (demo de estrutura). |
+| `--no-descriptions` | Gera apenas nomes. Por padrao a ferramenta traduz nomes **E** descricoes. |
 | `--dry-run` | Roda self-checks offline e sai. |
 
 ## Idempotente e resumivel
@@ -108,6 +109,18 @@ Todo I/O de rede e traducao e **cacheado em disco**:
 Se o processo parar no meio, basta rodar de novo: ele **continua de onde parou**,
 reaproveitando o cache e sem re-baixar nem re-traduzir. O cache e gitignored.
 
+## Nomes e descricoes
+
+Por padrao a ferramenta traduz **tanto o `name` quanto a `description`** de cada
+objeto da API. Cada texto em ingles vira uma entrada `{en, translated}`
+independente no **mesmo** dicionario: o nome e a descricao sao, cada um, um par
+`en`/traducao proprio. Isso mantem o loader C++ **inalterado** (ele continua
+lendo `entries[]` com `{en, translated}`; nao ha campo novo). Descricoes vazias
+sao descartadas e a deduplicacao por chave normalizada garante que um mesmo
+texto (nome ou descricao) nao apareca duas vezes.
+
+Use `--no-descriptions` para gerar apenas nomes (o comportamento antigo).
+
 ## Formato de saida
 
 Compativel byte a byte com o loader C++ (`src/translation/dictionary.cpp`):
@@ -118,14 +131,18 @@ Compativel byte a byte com o loader C++ (`src/translation/dictionary.cpp`):
     "category": "skills",
     "version": "1.0.0",
     "entries": [
-        { "en": "Fireball", "translated": "Bola de Fogo" }
+        { "en": "Fireball", "translated": "Bola de Fogo" },
+        { "en": "Throw gunk at target area to inflict a random condition.",
+          "translated": "Atirar o lixo para a área do alvo para infligir uma condição aleatória." }
     ]
 }
 ```
 
 - UTF-8, `ensure_ascii=false`, indentacao de 4 espacos.
+- Nomes **e** descricoes usam o mesmo formato `{en, translated}`; nao ha campo
+  extra, entao o loader C++ nao muda.
 - Dedup por chave normalizada (minuscula) para bater com o lookup
-  case-insensitive do C++; nomes vazios sao descartados.
+  case-insensitive do C++; textos vazios sao descartados.
 
 ## Rate limiting e resiliencia
 
@@ -133,15 +150,19 @@ Compativel byte a byte com o loader C++ (`src/translation/dictionary.cpp`):
   (padrao 0.25s => <= 240 req/min).
 - Lotes de detalhes: no maximo **200 IDs** por request (limite da API).
 - Retry com **backoff exponencial** em HTTP 429/5xx e erros de conexao,
-  honrando o header `Retry-After` quando presente.
+  honrando o header `Retry-After` quando presente (aceita tanto a forma
+  numerica em segundos quanto a forma HTTP-date da RFC 7231).
 
 ## Tempo, disco e memoria
 
-| Categoria | IDs aprox. | Tempo aprox. |
+| Categoria | IDs aprox. | Tempo aprox. (nomes + descricoes) |
 | --- | --- | --- |
-| skills | ~alguns milhares | minutos |
+| skills | ~4.700 IDs (~6.000 textos unicos) | ~5 min (traducao a frio) / ~0,2s (tudo em cache) |
 | traits, specializations, professions, pets, masteries | dezenas a centenas | segundos a minutos |
 | items | ~90.000 | horas (long-running) |
+
+> Traduzir descricoes praticamente dobra o volume de traducao em relacao a so
+> nomes. Use `--no-descriptions` se quiser apenas os nomes (mais rapido).
 
 - **Disco:** cache bruto da API (dezenas a centenas de MB para `items`) +
   modelo Argos `en->pt` (~100MB+). Tudo em `cache/` (gitignored).

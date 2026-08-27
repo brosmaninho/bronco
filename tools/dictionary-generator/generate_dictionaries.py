@@ -119,6 +119,7 @@ def generate_category(
     output_dir: Path,
     limit: int = 0,
     no_translate: bool = False,
+    include_descriptions: bool = True,
     batch_size: int = gw2_api.DEFAULT_BATCH_SIZE,
 ) -> dict:
     print(f"[{category}] buscando lista de IDs...")
@@ -127,34 +128,49 @@ def generate_category(
         ids = ids[:limit]
     print(f"[{category}] {len(ids)} IDs (limit={limit or 'nenhum'})")
 
-    # Coleta nomes unicos em ingles preservando a primeira ocorrencia.
-    batches = gw2_api.chunk_ids(ids, batch_size)
+    # Coleta textos unicos em ingles (nomes e, por padrao, descricoes),
+    # preservando a ordem/primeira ocorrencia. Cada texto vira uma entrada
+    # {en, translated} independente, mantendo o loader C++ inalterado: nomes
+    # e descricoes compartilham o mesmo formato de par en/traducao.
+    n_batches = len(gw2_api.chunk_ids(ids, batch_size))
+    progress = lambda batches: _progress(  # noqa: E731
+        batches, f"[{category}] baixando lotes", total=n_batches
+    )
+
     seen_keys = set()
-    english_names: List[str] = []
+    english_texts: List[str] = []
     fetched = 0
-    for batch in _progress(batches, f"[{category}] baixando lotes", total=len(batches)):
-        if not batch:
-            continue
-        for obj in client.fetch_batch(category, batch, lang="en"):
-            fetched += 1
-            fields = gw2_api.extract_text_fields(obj)
-            name = fields["name"]
-            if not name:
+    n_names = 0
+    n_descs = 0
+    # iter_details e o UNICO caminho de batching de detalhes (sem duplicar loop).
+    for obj in client.iter_details(category, ids, lang="en", batch_size=batch_size, progress=progress):
+        fetched += 1
+        fields = gw2_api.extract_text_fields(obj)
+        candidates = [("name", fields["name"])]
+        if include_descriptions:
+            candidates.append(("description", fields["description"]))
+        for kind, text in candidates:
+            if not text:
                 continue
-            key = normalize_key(name)
+            key = normalize_key(text)
             if key in seen_keys:
                 continue
             seen_keys.add(key)
-            english_names.append(name)
+            english_texts.append(text)
+            if kind == "name":
+                n_names += 1
+            else:
+                n_descs += 1
 
-    print(f"[{category}] {fetched} objetos, {len(english_names)} nomes unicos")
+    desc_note = f", {n_descs} descricoes" if include_descriptions else " (descricoes desativadas)"
+    print(f"[{category}] {fetched} objetos, {len(english_texts)} textos unicos ({n_names} nomes{desc_note})")
 
     pairs: List[tuple] = []
     if no_translate:
-        pairs = [(name, name) for name in english_names]
+        pairs = [(text, text) for text in english_texts]
     else:
-        for name in _progress(english_names, f"[{category}] traduzindo", total=len(english_names)):
-            pairs.append((name, trans.translate(name)))
+        for text in _progress(english_texts, f"[{category}] traduzindo", total=len(english_texts)):
+            pairs.append((text, trans.translate(text)))
         if trans.cache is not None:
             trans.cache.save()
 
@@ -246,6 +262,55 @@ def run_self_checks() -> int:
         lazy_ok = False
     check("Translator instancia sem exigir argostranslate (import preguicoso)", lazy_ok)
 
+    # (f) Nomes E descricoes viram entradas {en, translated} separadas.
+    #     Simula dois objetos: name+description; cada texto nao-vazio e unico
+    #     deve produzir uma entrada. Descricao vazia e descartada.
+    objs = [
+        {"id": 1, "name": "Fireball", "description": "Deals fire damage."},
+        {"id": 2, "name": "Ice Shard", "description": ""},  # descricao vazia
+        {"id": 3, "name": "Fireball", "description": "Deals fire damage."},  # dup
+    ]
+    seen_keys = set()
+    texts = []
+    for obj in objs:
+        fields = gw2_api.extract_text_fields(obj)
+        for text in (fields["name"], fields["description"]):
+            if not text:
+                continue
+            key = normalize_key(text)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            texts.append(text)
+    df = build_dictionary("skills", [(t2, t2) for t2 in texts])
+    ens = {e["en"] for e in df["entries"]}
+    desc_ok = (
+        len(df["entries"]) == 3
+        and "Fireball" in ens
+        and "Ice Shard" in ens
+        and "Deals fire damage." in ens
+        and all(e["en"] and e["translated"] for e in df["entries"])
+    )
+    check("nomes e descricoes viram entradas {en, translated} (dedup + descarta vazias)", desc_ok)
+
+    # (g) Retry-After: aceita forma numerica e HTTP-date (RFC 7231).
+    from datetime import datetime, timedelta, timezone
+
+    future = datetime.now(timezone.utc) + timedelta(seconds=120)
+    http_date = future.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    ra_numeric = gw2_api._parse_retry_after("30")
+    ra_date = gw2_api._parse_retry_after(http_date)
+    ra_none = gw2_api._parse_retry_after(None)
+    ra_junk = gw2_api._parse_retry_after("not-a-date")
+    retry_after_ok = (
+        ra_numeric == 30.0
+        and ra_date is not None
+        and 60.0 <= ra_date <= 130.0
+        and ra_none is None
+        and ra_junk is None
+    )
+    check("Retry-After interpreta segundos e HTTP-date (RFC 7231)", retry_after_ok)
+
     if failures:
         print(f"\n{len(failures)} self-check(s) falharam: {', '.join(failures)}")
         return 1
@@ -296,6 +361,11 @@ def parse_args(argv=None):
         help="nao traduz; 'translated' recebe o ingles (demo de estrutura, sem Argos/rede de traducao).",
     )
     p.add_argument(
+        "--no-descriptions",
+        action="store_true",
+        help="gera apenas nomes; por padrao nomes E descricoes viram entradas {en, translated}.",
+    )
+    p.add_argument(
         "--dry-run",
         action="store_true",
         help="roda self-checks offline (sem rede, sem Argos) e sai.",
@@ -318,11 +388,13 @@ def main(argv=None) -> int:
     cache_dir = Path(args.cache_dir)
     client = gw2_api.GW2Client(cache_dir=cache_dir, min_delay=args.min_delay)
 
-    trans_cache = None
+    # So construimos o Translator quando ele sera de fato usado. Em
+    # --no-translate nenhuma traducao acontece, entao nao criamos nem o cache
+    # nem o wrapper (evita instanciar algo inutil e deixa o intento explicito).
     trans = None
     if not args.no_translate:
         trans_cache = translator.TranslationCache(cache_dir / "translations.json")
-    trans = translator.Translator(cache=trans_cache)
+        trans = translator.Translator(cache=trans_cache)
 
     categories = (
         gw2_api.SUPPORTED_ENDPOINTS if args.category == "all" else [args.category]
@@ -336,14 +408,18 @@ def main(argv=None) -> int:
             output_dir=args.output_dir,
             limit=args.limit,
             no_translate=args.no_translate,
+            include_descriptions=not args.no_descriptions,
         )
 
     print("\nResumo:")
     print(f"  requests HTTP: {client.stats['requests']}")
     print(f"  cache hits (API): {client.stats['cache_hits']}")
     print(f"  retries: {client.stats['retries']}")
-    print(f"  traducoes feitas: {trans.stats['translated']}")
-    print(f"  cache hits (traducao): {trans.stats['cache_hits']}")
+    if trans is not None:
+        print(f"  traducoes feitas: {trans.stats['translated']}")
+        print(f"  cache hits (traducao): {trans.stats['cache_hits']}")
+    else:
+        print("  traducao: desativada (--no-translate)")
     return 0
 
 

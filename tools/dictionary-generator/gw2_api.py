@@ -66,6 +66,42 @@ def _get_requests():
     return requests
 
 
+def _parse_retry_after(value: Optional[str]) -> Optional[float]:
+    """Interpreta o header Retry-After em segundos.
+
+    Aceita as duas formas definidas pela RFC 7231:
+      - delay-seconds numerico (ex.: "120") -> retorna 120.0
+      - HTTP-date (ex.: "Wed, 21 Oct 2015 07:28:00 GMT") -> segundos ate a data
+
+    A API do GW2 retorna a forma numerica, mas tratamos a forma de data para
+    nao cair silenciosamente no backoff caso um proxy/CDN a devolva. Retorna
+    None quando o valor esta ausente ou nao e interpretavel.
+    """
+    if value is None:
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    # Forma numerica (delay-seconds).
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+    # Forma HTTP-date.
+    try:
+        from email.utils import parsedate_to_datetime
+
+        when = parsedate_to_datetime(value)
+        if when is None:
+            return None
+        from datetime import datetime, timezone
+
+        now = datetime.now(when.tzinfo or timezone.utc)
+        return max(0.0, (when - now).total_seconds())
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
 def chunk_ids(ids: Iterable, batch_size: int = DEFAULT_BATCH_SIZE) -> List[list]:
     """Divide uma lista de IDs em lotes de no maximo `batch_size` (<= 200).
 
@@ -142,12 +178,9 @@ class GW2Client:
                 if attempt > self.max_retries:
                     resp.raise_for_status()
                 self.stats["retries"] += 1
-                retry_after = resp.headers.get("Retry-After")
-                if retry_after is not None:
-                    try:
-                        time.sleep(float(retry_after))
-                    except (TypeError, ValueError):
-                        self._sleep_backoff(attempt)
+                delay = _parse_retry_after(resp.headers.get("Retry-After"))
+                if delay is not None and delay >= 0:
+                    time.sleep(delay)
                 else:
                     self._sleep_backoff(attempt)
                 continue
@@ -213,7 +246,13 @@ class GW2Client:
         batch_size: int = DEFAULT_BATCH_SIZE,
         progress: Optional[Callable[[List[list]], Iterable]] = None,
     ) -> Iterable[dict]:
-        """Itera sobre todos os objetos de detalhe, lote a lote (cacheado)."""
+        """Itera sobre todos os objetos de detalhe, lote a lote (cacheado).
+
+        Este e o UNICO ponto de batching de detalhes: a pipeline consome este
+        gerador em vez de reimplementar o loop de lotes. `progress`, quando
+        fornecido, embrulha a lista de lotes (ex.: tqdm) para a barra de
+        progresso refletir o numero de lotes.
+        """
         batches = chunk_ids(ids, batch_size)
         iterator = progress(batches) if progress is not None else batches
         for batch in iterator:
