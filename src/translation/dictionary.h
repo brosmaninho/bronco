@@ -35,11 +35,22 @@ public:
 
     /// Fuzzy substring lookup for imperfect OCR text.
     /// Normalizes the source text (lowercase + whitespace-collapse + trim), then
-    /// scans every entry and finds the entry whose stored (already-normalized)
-    /// key is a substring of the normalized source OR whose key contains the
-    /// normalized source. Only keys of normalized length >= 4 characters are
-    /// considered (to avoid spurious matches on tiny tokens). Among all matches
-    /// the entry with the LONGEST key wins (most specific match).
+    /// scans every entry looking for a key that occurs inside the normalized
+    /// source. Matching is intentionally strict to avoid false positives from
+    /// common short English verbs that also happen to be skill names
+    /// (e.g. "slash", "throw", "leap"):
+    ///   1. Only the source-contains-key direction is used (the reverse
+    ///      key-contains-source direction was dropped: a tiny OCR fragment must
+    ///      not claim a much longer multi-word key).
+    ///   2. A key qualifies only if it is "substantial": either it is
+    ///      multi-word (contains a space) with normalized length >= 6, or it is
+    ///      a single word of length >= 8. Shorter single words are ignored so
+    ///      ordinary words cannot hijack a whole line.
+    ///   3. The key must occur on WORD BOUNDARIES within the source (bounded by
+    ///      start/end-of-string or a space on each side), so "leap" does not
+    ///      match inside "leaping" or "please".
+    /// Among all qualifying matches the entry with the LONGEST key wins (most
+    /// specific match).
     ///
     /// This tolerates OCR reading a known term (e.g. a skill name) with extra
     /// surrounding noise or different spacing/newlines than the dictionary key.
@@ -62,6 +73,13 @@ private:
 
     /// Normalize a string for case-insensitive lookup.
     static std::string normalize(const std::string& text);
+
+    /// Return true if `key` occurs inside `source` on word boundaries, i.e.
+    /// every occurrence check requires the character immediately before and
+    /// after the match to be a space or a string boundary. Both arguments are
+    /// expected to already be normalized. Used by lookupContains() so a key
+    /// like "leap" matches "use leap now" but not "leaping" or "please".
+    static bool containsOnWordBoundary(const std::string& source, const std::string& key);
 };
 
 /// Manages all dictionaries for a specific locale.
