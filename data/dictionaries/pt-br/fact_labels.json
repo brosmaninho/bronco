@@ -29,7 +29,7 @@
         },
         {
             "en": "Apply Buff/Condition",
-            "translated": "Apply Buff/Condition"
+            "translated": "Aplicar o Buff/Condition"
         },
         {
             "en": "Healing",
@@ -37,7 +37,7 @@
         },
         {
             "en": "Initiative Gain",
-            "translated": "Initiative Gain"
+            "translated": "Ganho da Iniciativa"
         },
         {
             "en": "Recharge",
@@ -45,11 +45,11 @@
         },
         {
             "en": "Conditions Removed",
-            "translated": "Conditions Removed"
+            "translated": "Condições Removidas"
         },
         {
             "en": "Interval",
-            "translated": "Interval"
+            "translated": "Intervalo"
         },
         {
             "en": "Duration",
@@ -61,19 +61,19 @@
         },
         {
             "en": "Number of Attacks",
-            "translated": "Number of Attacks"
+            "translated": "Número de Ataques"
         },
         {
             "en": "Reflects Missiles",
-            "translated": "Reflects Missiles"
+            "translated": "Refletir os Mísseis"
         },
         {
             "en": "Glue Puddle Duration",
-            "translated": "Glue Puddle Duration"
+            "translated": "Duração da Poça de Cola"
         },
         {
             "en": "Field Duration",
-            "translated": "Field Duration"
+            "translated": "Duração do Campo"
         },
         {
             "en": "Daze",
@@ -81,27 +81,27 @@
         },
         {
             "en": "Minimum Damage",
-            "translated": "Minimum Damage"
+            "translated": "Danos mínimos"
         },
         {
             "en": "Damage Reduction per Hit",
-            "translated": "Damage Reduction per Hit"
+            "translated": "Redução de danos por hit"
         },
         {
             "en": "Impact Radius",
-            "translated": "Impact Radius"
+            "translated": "Raio de Impacto"
         },
         {
             "en": "Number of Impacts",
-            "translated": "Number of Impacts"
+            "translated": "Número de Impactos"
         },
         {
             "en": "Healing per Cast",
-            "translated": "Healing per Cast"
+            "translated": "Cura por Elenco"
         },
         {
             "en": "Channel Duration",
-            "translated": "Channel Duration"
+            "translated": "Duração do Canal"
         },
         {
             "en": "StunBreak",
@@ -113,23 +113,23 @@
         },
         {
             "en": "Endurance Gained",
-            "translated": "Endurance Gained"
+            "translated": "Ganha - se perseverança"
         },
         {
             "en": "Secondary Strike",
-            "translated": "Secondary Strike"
+            "translated": "Greve Secundária"
         },
         {
             "en": "First-Hit Healing",
-            "translated": "First-Hit Healing"
+            "translated": "Cura do primeiro golpe"
         },
         {
             "en": "Additional-Hit Healing",
-            "translated": "Additional-Hit Healing"
+            "translated": "Cura por hit adicional"
         },
         {
             "en": "Maximum Count",
-            "translated": "Maximum Count"
+            "translated": "Número máximo"
         },
         {
             "en": "Count Recharge",
@@ -137,55 +137,55 @@
         },
         {
             "en": "Damage Increase",
-            "translated": "Damage Increase"
+            "translated": "Aumento de Danos"
         },
         {
             "en": "Fire Wall Damage",
-            "translated": "Fire Wall Damage"
+            "translated": "Danos na parede de fogo"
         },
         {
             "en": "Fire Wall Duration",
-            "translated": "Fire Wall Duration"
+            "translated": "Duração da parede de fogo"
         },
         {
             "en": "Number of Bounces",
-            "translated": "Number of Bounces"
+            "translated": "Número de Saltos"
         },
         {
             "en": "Prevents Capture-Point Contribution",
-            "translated": "Prevents Capture-Point Contribution"
+            "translated": "Previne a contribuição do ponto de captura"
         },
         {
             "en": "Initial Damage",
-            "translated": "Initial Damage"
+            "translated": "Danos iniciais"
         },
         {
             "en": "Final Impact Damage",
-            "translated": "Final Impact Damage"
+            "translated": "Danos de Impacto Final"
         },
         {
             "en": "Initial Radius",
-            "translated": "Initial Radius"
+            "translated": "Raio inicial"
         },
         {
             "en": "Final Impact",
-            "translated": "Final Impact"
+            "translated": "Impacto final"
         },
         {
             "en": "Blocks Missiles",
-            "translated": "Blocks Missiles"
+            "translated": "Blocos de Mísseis"
         },
         {
             "en": "Stage 1 Damage",
-            "translated": "Stage 1 Damage"
+            "translated": "Fase 1"
         },
         {
             "en": "Stage 2 Damage",
-            "translated": "Stage 2 Damage"
+            "translated": "Etapa 2 Danos"
         },
         {
             "en": "Stage 3 Damage",
-            "translated": "Stage 3 Damage"
+            "translated": "Etapa 3 Danos"
         },
         {
             "en": "Stun",
@@ -193,27 +193,27 @@
         },
         {
             "en": "Number of Casts",
-            "translated": "Number of Casts"
+            "translated": "Número de Elencos"
         },
         {
             "en": "Pierces",
-            "translated": "Pierces"
+            "translated": "Perfurações"
         },
         {
             "en": "Launch",
-            "translated": "Launch"
+            "translated": "Lançar"
         },
         {
             "en": "Stability and Damage Pulse",
-            "translated": "Stability and Damage Pulse"
+            "translated": "Estabilidade e pulso de danos"
         },
         {
             "en": "Boon Application Interval",
-            "translated": "Boon Application Interval"
+            "translated": "Intervalo de Aplicação Boon"
         },
         {
             "en": "Heal per Condition",
-            "translated": "Heal per Condition"
+            "translated": "Cura por Condição"
         },
         {
             "en": "Knockback",
@@ -221,27 +221,27 @@
         },
         {
             "en": "Movement Speed Increase",
-            "translated": "Movement Speed Increase"
+            "translated": "Aumento da velocidade do movimento"
         },
         {
             "en": "Reflection Duration",
-            "translated": "Reflection Duration"
+            "translated": "Duração da Reflexão"
         },
         {
             "en": "Damage vs. Burning",
-            "translated": "Damage vs. Burning"
+            "translated": "Danos versus Queimadura"
         },
         {
             "en": "Spike Maximum Targets",
-            "translated": "Spike Maximum Targets"
+            "translated": "Alvos Máximos do Spike"
         },
         {
             "en": "Final Strike Maximum Targets",
-            "translated": "Final Strike Maximum Targets"
+            "translated": "Alvos Máximos de Ataque Final"
         },
         {
             "en": "Spike Radius",
-            "translated": "Spike Radius"
+            "translated": "Raio Spike"
         },
         {
             "en": "Knockdown",
@@ -249,91 +249,91 @@
         },
         {
             "en": "Increased Arrows per Water Arrow Stack",
-            "translated": "Increased Arrows per Water Arrow Stack"
+            "translated": "Setas aumentadas por pilha de setas de água"
         },
         {
             "en": "Condition Duration Reduction",
-            "translated": "Condition Duration Reduction"
+            "translated": "Redução da Duração da Condição"
         },
         {
             "en": "Revive Percentage",
-            "translated": "Revive Percentage"
+            "translated": "Percentagem Reviva"
         },
         {
             "en": "Breaks Stun",
-            "translated": "Breaks Stun"
+            "translated": "Quebra o choque"
         },
         {
             "en": "Maximum Stacks",
-            "translated": "Maximum Stacks"
+            "translated": "Pilha Máxima"
         },
         {
             "en": "Number of Allied Targets",
-            "translated": "Number of Allied Targets"
+            "translated": "Número de alvos aliados"
         },
         {
             "en": "Explosion Damage",
-            "translated": "Explosion Damage"
+            "translated": "Danos à Explosão"
         },
         {
             "en": "Explosion Radius",
-            "translated": "Explosion Radius"
+            "translated": "Raio de Explosão"
         },
         {
             "en": "Damage Pulse",
-            "translated": "Damage Pulse"
+            "translated": "Pulso de Danos"
         },
         {
             "en": "Boon Gain Interval",
-            "translated": "Boon Gain Interval"
+            "translated": "Intervalo de Ganho de Boon"
         },
         {
             "en": "Pull",
-            "translated": "Pull"
+            "translated": "Puxar"
         },
         {
             "en": "Projectile Dmg",
-            "translated": "Projectile Dmg"
+            "translated": "Projéctil Dmg"
         },
         {
             "en": "Detonation Damage",
-            "translated": "Detonation Damage"
+            "translated": "Danos por Detonação"
         },
         {
             "en": "Maximum Damage",
-            "translated": "Maximum Damage"
+            "translated": "Prejuízo máximo"
         },
         {
             "en": "Base Damage",
-            "translated": "Base Damage"
+            "translated": "Danos à Base"
         },
         {
             "en": "Recharge reduced to",
-            "translated": "Recharge reduced to"
+            "translated": "Recarga reduzida a"
         },
         {
             "en": "Maximum Boon Scaling",
-            "translated": "Maximum Boon Scaling"
+            "translated": "Escala de Boão Máxima"
         },
         {
             "en": "Barrier per Boon",
-            "translated": "Barrier per Boon"
+            "translated": "Barreira por Boon"
         },
         {
             "en": "Blast Damage",
-            "translated": "Blast Damage"
+            "translated": "Danos por Explosão"
         },
         {
             "en": "Blast Radius",
-            "translated": "Blast Radius"
+            "translated": "Raio de explosão"
         },
         {
             "en": "Delay",
-            "translated": "Delay"
+            "translated": "Atraso"
         },
         {
             "en": "Float",
-            "translated": "Float"
+            "translated": "Flutuante"
         },
         {
             "en": "Sink",
@@ -341,87 +341,87 @@
         },
         {
             "en": "Ring of Fire Duration",
-            "translated": "Ring of Fire Duration"
+            "translated": "Duração do Anel de Fogo"
         },
         {
             "en": "Barrier",
-            "translated": "Barrier"
+            "translated": "Barreira"
         },
         {
             "en": "Damage increase per stack.",
-            "translated": "Damage increase per stack."
+            "translated": "Aumento de danos por pilha."
         },
         {
             "en": "Duration Increase per Water Arrow Stack",
-            "translated": "Duration Increase per Water Arrow Stack"
+            "translated": "Aumento de duração por pilha de seta de água"
         },
         {
             "en": "Bonus Impact per Stack of Water Arrow",
-            "translated": "Bonus Impact per Stack of Water Arrow"
+            "translated": "Impacto Bônus por Pilha de Seta de Água"
         },
         {
             "en": "Revive Targets",
-            "translated": "Revive Targets"
+            "translated": "Alvos Revive"
         },
         {
             "en": "Number of Grenades",
-            "translated": "Number of Grenades"
+            "translated": "Número de Granadas"
         },
         {
             "en": "Explosion",
-            "translated": "Explosion"
+            "translated": "Explosão"
         },
         {
             "en": "Fuse Time",
-            "translated": "Fuse Time"
+            "translated": "Tempo de Fusão"
         },
         {
             "en": "Rate of Fire",
-            "translated": "Rate of Fire"
+            "translated": "Taxa de Fogo"
         },
         {
             "en": "Attack Range",
-            "translated": "Attack Range"
+            "translated": "Intervalo de Ataque"
         },
         {
             "en": "Overcharge Cooldown",
-            "translated": "Overcharge Cooldown"
+            "translated": "Sobrecarga Refrigeração"
         },
         {
             "en": "Duration Increase",
-            "translated": "Duration Increase"
+            "translated": "Aumento da Duração"
         },
         {
             "en": "Oil Slick Duration",
-            "translated": "Oil Slick Duration"
+            "translated": "Duração Slick Óleo"
         },
         {
             "en": "Number of Hits per Target",
-            "translated": "Number of Hits per Target"
+            "translated": "Número de Acertos por Alvo"
         },
         {
             "en": "Conditions Converted to Boons",
-            "translated": "Conditions Converted to Boons"
+            "translated": "Condições convertidas em Boons"
         },
         {
             "en": "Revive Percent per Pulse",
-            "translated": "Revive Percent per Pulse"
+            "translated": "Reviver a Percentagem de Pulso"
         },
         {
             "en": "Rate of Fire Increase",
-            "translated": "Rate of Fire Increase"
+            "translated": "Aumento da taxa de fogo"
         },
         {
             "en": "Rocket Distance",
-            "translated": "Rocket Distance"
+            "translated": "Distância do foguete"
         },
         {
             "en": "Attacks per Second",
-            "translated": "Attacks per Second"
+            "translated": "Ataques por segundo"
         },
         {
             "en": "Knockback Distance",
-            "translated": "Knockback Distance"
+            "translated": "Distância do Knockback"
         },
         {
             "en": "Distance",
@@ -429,59 +429,2647 @@
         },
         {
             "en": "Impact Heal",
-            "translated": "Impact Heal"
+            "translated": "Cura de Impacto"
         },
         {
             "en": "Pulse Heal",
-            "translated": "Pulse Heal"
+            "translated": "Cura do Pulso"
         },
         {
             "en": "Initial Self Conditions Removed",
-            "translated": "Initial Self Conditions Removed"
+            "translated": "Auto- Condições Iniciais Removidas"
         },
         {
             "en": "Turret Heal Percent",
-            "translated": "Turret Heal Percent"
+            "translated": "Cure a torreta Percentagem"
         },
         {
             "en": "Box of Nails Duration",
-            "translated": "Box of Nails Duration"
+            "translated": "Caixa de pregos Duração"
         },
         {
             "en": "Leap Damage",
-            "translated": "Leap Damage"
+            "translated": "Dano Salto"
         },
         {
             "en": "Landing Damage",
-            "translated": "Landing Damage"
+            "translated": "Danos ao desembarque"
         },
         {
             "en": "Block Duration",
-            "translated": "Block Duration"
+            "translated": "Duração do Bloco"
         },
         {
             "en": "Timer",
-            "translated": "Timer"
+            "translated": "Temporizador"
         },
         {
             "en": "Boon Radius",
-            "translated": "Boon Radius"
+            "translated": "Raio Boon"
         },
         {
             "en": "Foe Launch Distance",
-            "translated": "Foe Launch Distance"
+            "translated": "Distância de Lançamento do Foe"
         },
         {
             "en": "Proximity Radius",
-            "translated": "Proximity Radius"
+            "translated": "Raio de proximidade"
         },
         {
             "en": "Boons Removed",
-            "translated": "Boons Removed"
+            "translated": "Boões Removidos"
         },
         {
             "en": "Damage per Mine",
-            "translated": "Damage per Mine"
+            "translated": "Danos por Mina"
+        },
+        {
+            "en": "Projectile Damage",
+            "translated": "Danos por Projécteis"
+        },
+        {
+            "en": "Initial Self Heal",
+            "translated": "Auto- Cura Inicial"
+        },
+        {
+            "en": "Self Heal per Pulse",
+            "translated": "Auto-cura por pulso"
+        },
+        {
+            "en": "Allied Heal per Pulse",
+            "translated": "Cura Aliada por Pulso"
+        },
+        {
+            "en": "Conditions Removed from Self",
+            "translated": "Condições Removidas do Si Mesmo"
+        },
+        {
+            "en": "Symbol Damage",
+            "translated": "Danos de Símbolo"
+        },
+        {
+            "en": "Symbol Duration",
+            "translated": "Duração do Símbolo"
+        },
+        {
+            "en": "Symbol Radius",
+            "translated": "Raio de Símbolo"
+        },
+        {
+            "en": "Shield Duration",
+            "translated": "Duração do Escudo"
+        },
+        {
+            "en": "Blind Radius",
+            "translated": "Raio cego"
+        },
+        {
+            "en": "Damage With No Conditions",
+            "translated": "Danos Sem Condições"
+        },
+        {
+            "en": "Damage With Condition",
+            "translated": "Danos com Condição"
+        },
+        {
+            "en": "Number of Attacks to Trigger",
+            "translated": "Número de Ataques a Ativar"
+        },
+        {
+            "en": "Aegis Refresh",
+            "translated": "Atualizar o Aegis"
+        },
+        {
+            "en": "Self Condition Removal",
+            "translated": "Remoção de Auto- Condição"
+        },
+        {
+            "en": "Casts",
+            "translated": "Elencos"
+        },
+        {
+            "en": "Maximum Leash Range",
+            "translated": "Intervalo de Leash Máximo"
+        },
+        {
+            "en": "Maximum Blade Duration",
+            "translated": "Duração máxima da lâmina"
+        },
+        {
+            "en": "Passive Conditions Removed",
+            "translated": "Condições Passivas Removidas"
+        },
+        {
+            "en": "Active Conditions Removed",
+            "translated": "Condições Ativas Removidas"
+        },
+        {
+            "en": "Hammer Damage",
+            "translated": "Danos no Martelo"
+        },
+        {
+            "en": "Number of Targets (Hammer)",
+            "translated": "Número de alvos (Hammer)"
+        },
+        {
+            "en": "Number of Targets (Symbol)",
+            "translated": "Número de alvos (Símbolo)"
+        },
+        {
+            "en": "Dome Radius",
+            "translated": "Raio de cúpula"
+        },
+        {
+            "en": "Teleport Range",
+            "translated": "Intervalo de Teletransporte"
+        },
+        {
+            "en": "Leash Range",
+            "translated": "Intervalo de Leash"
+        },
+        {
+            "en": "First Hit Barrier",
+            "translated": "Primeira Barreira de Ataques"
+        },
+        {
+            "en": "Additional Hit Barrier",
+            "translated": "Barreira Adicional de Atingidos"
+        },
+        {
+            "en": "Final Heal",
+            "translated": "Cura Final"
+        },
+        {
+            "en": "Heal Pulses",
+            "translated": "Pulsos de cura"
+        },
+        {
+            "en": "Damage without Boons",
+            "translated": "Danos sem Boons"
+        },
+        {
+            "en": "Damage with Boons",
+            "translated": "Danos com os Boons"
+        },
+        {
+            "en": "Phantasm Damage",
+            "translated": "Danos ao Fantasma"
+        },
+        {
+            "en": "Sword Strike Damage",
+            "translated": "Dano da espada"
+        },
+        {
+            "en": "Sword Strike Range",
+            "translated": "Faixa de ataque da espada"
+        },
+        {
+            "en": "Illusion Damage",
+            "translated": "Danos por Ilusão"
+        },
+        {
+            "en": "Heal per Clone",
+            "translated": "Cura por Clone"
+        },
+        {
+            "en": "Conditions Removed per Clone",
+            "translated": "Condições Removidas por Clone"
+        },
+        {
+            "en": "First Hit Damage",
+            "translated": "Primeiro dano atingido"
+        },
+        {
+            "en": "Additional Hit Damage",
+            "translated": "Danos Adicionais"
+        },
+        {
+            "en": "Boons Stolen",
+            "translated": "Boons Roubados"
+        },
+        {
+            "en": "Conditions Transferred",
+            "translated": "Condições transferidas"
+        },
+        {
+            "en": "Curtain Duration",
+            "translated": "Duração da cortina"
+        },
+        {
+            "en": "1 Clone",
+            "translated": "1 Clone"
+        },
+        {
+            "en": "2 Clones",
+            "translated": "2 Clones"
+        },
+        {
+            "en": "3 Clones",
+            "translated": "3 Clones"
+        },
+        {
+            "en": "Range Threshold",
+            "translated": "Limiar de alcance"
+        },
+        {
+            "en": "Breaks Enemy Targeting",
+            "translated": "Quebra o Alvo Inimigo"
+        },
+        {
+            "en": "Recharge Time Reduced",
+            "translated": "Tempo de recarga reduzido"
+        },
+        {
+            "en": "Conditions Removed from Allies",
+            "translated": "Condições removidas dos aliados"
+        },
+        {
+            "en": "Self-Healing",
+            "translated": "Auto-cura"
+        },
+        {
+            "en": "Ally-Healing",
+            "translated": "Cura Ally"
+        },
+        {
+            "en": "Healing below 50%",
+            "translated": "Cura abaixo de 50%"
+        },
+        {
+            "en": "Health Threshold",
+            "translated": "Limiar de Saúde"
+        },
+        {
+            "en": "Illusions Summoned",
+            "translated": "Invocação de Ilusões"
+        },
+        {
+            "en": "Damage Increase per Stack of Vulnerability",
+            "translated": "Aumento de danos por pilha de vulnerabilidade"
+        },
+        {
+            "en": "Greatsword Damage",
+            "translated": "Grandes Danos"
+        },
+        {
+            "en": "Whirling Strikes",
+            "translated": "Ataques de rotura"
+        },
+        {
+            "en": "Recharge Reduced",
+            "translated": "Recarga Reduzida"
+        },
+        {
+            "en": "Backstab Bonus",
+            "translated": "Bónus de Apunhalamento"
+        },
+        {
+            "en": "Combat Only",
+            "translated": "Apenas Combate"
+        },
+        {
+            "en": "Final Strike Damage",
+            "translated": "Dano final da greve"
+        },
+        {
+            "en": "Evasive Strike Damage",
+            "translated": "Dano de ataque evasivo"
+        },
+        {
+            "en": "Initial Pull Radius",
+            "translated": "Raio de puxar inicial"
+        },
+        {
+            "en": "Evade",
+            "translated": "Evasão"
+        },
+        {
+            "en": "Clones Created",
+            "translated": "Clones Criados"
+        },
+        {
+            "en": "Damage Reduction per Bounce",
+            "translated": "Redução de Danos por Salto"
+        },
+        {
+            "en": "Bounce Range",
+            "translated": "Intervalo de Salto"
+        },
+        {
+            "en": "Increased damage per block",
+            "translated": "Aumento dos danos por bloco"
+        },
+        {
+            "en": "Maximum Damage Increase",
+            "translated": "Aumento máximo de danos"
+        },
+        {
+            "en": "Health per Second",
+            "translated": "Saúde por segundo"
+        },
+        {
+            "en": "Life Force",
+            "translated": "Força vital"
+        },
+        {
+            "en": "Bonus damage per vulnerability stack",
+            "translated": "Dano de bônus por pilha de vulnerabilidade"
+        },
+        {
+            "en": "Boons Converted to Conditions",
+            "translated": "Boons convertidos em condições"
+        },
+        {
+            "en": "Pulse",
+            "translated": "Pulso"
+        },
+        {
+            "en": "Stability Interval",
+            "translated": "Intervalo de Estabilidade"
+        },
+        {
+            "en": "Life Force When Ending",
+            "translated": "Força vital ao terminar"
+        },
+        {
+            "en": "Damage—Three Boons",
+            "translated": "Danos — Três Boons"
+        },
+        {
+            "en": "Damage—Two Boons",
+            "translated": "Danos — Dois Boons"
+        },
+        {
+            "en": "Damage—One Boon",
+            "translated": "Danos — Um Boon"
+        },
+        {
+            "en": "Damage—No Boons",
+            "translated": "Danos — Sem Boons"
+        },
+        {
+            "en": "Bonus Defiance Break",
+            "translated": "Bônus Defiance Break"
+        },
+        {
+            "en": "Healing Radius",
+            "translated": "Raio de Cura"
+        },
+        {
+            "en": "Life Siphon Damage",
+            "translated": "Danos do Sifão da Vida"
+        },
+        {
+            "en": "Life Siphon Healing",
+            "translated": "Cura de Sifão da Vida"
+        },
+        {
+            "en": "Conditions Sent",
+            "translated": "Condições enviadas"
+        },
+        {
+            "en": "Damage Reduced",
+            "translated": "Redução de Danos"
+        },
+        {
+            "en": "Blood Fiend Health Sacrifice",
+            "translated": "Sacrifício Sangrento para a Saúde"
+        },
+        {
+            "en": "Gain life force when taking damage.",
+            "translated": "Ganhar força vital ao sofrer danos."
+        },
+        {
+            "en": "Life Force Per Hit",
+            "translated": "Força vital por golpe"
+        },
+        {
+            "en": "Boons Converted",
+            "translated": "Boons convertidos"
+        },
+        {
+            "en": "Dark Pursuit Duration",
+            "translated": "Duração da perseguição escura"
+        },
+        {
+            "en": "Cannot Critical Hit",
+            "translated": "Não É Possível Crítica Acertar"
+        },
+        {
+            "en": "Duration Decreased",
+            "translated": "Duração Diminuida"
+        },
+        {
+            "en": "Life Force per 3 Seconds",
+            "translated": "Força vital por 3 segundos"
+        },
+        {
+            "en": "Healing per Hit",
+            "translated": "Cura por Acerto"
+        },
+        {
+            "en": "Healing per Boon Removed",
+            "translated": "Cura por Boon Removido"
+        },
+        {
+            "en": "Missile Damage",
+            "translated": "Dano de Mísseis"
+        },
+        {
+            "en": "Maximum Crimson Tide Activations",
+            "translated": "Ativações Máximas de Maré Carmesim"
+        },
+        {
+            "en": "Minion Damage",
+            "translated": "Danos mínimos"
+        },
+        {
+            "en": "Summon Interval",
+            "translated": "Intervalo de Invocação"
+        },
+        {
+            "en": "Minion Lifetime",
+            "translated": "Minion Lifetime"
+        },
+        {
+            "en": "Number of Hits",
+            "translated": "Número de Acertos"
+        },
+        {
+            "en": "Life Force per Condition",
+            "translated": "Força vital por condição"
+        },
+        {
+            "en": "Condition-Removal Interval",
+            "translated": "Intervalo Condição- Remoção"
+        },
+        {
+            "en": "Condition Threshold",
+            "translated": "Limiar de Condição"
+        },
+        {
+            "en": "Targets per Shell",
+            "translated": "Alvos por Shell"
+        },
+        {
+            "en": "Minimum Range",
+            "translated": "Intervalo Mínimo"
+        },
+        {
+            "en": "Time to trigger",
+            "translated": "Hora de activar"
+        },
+        {
+            "en": "Number of Shots",
+            "translated": "Número de tiros"
+        },
+        {
+            "en": "Blowout Radius",
+            "translated": "Raio de explosão"
+        },
+        {
+            "en": "Number of Projectiles",
+            "translated": "Número de projéteis"
+        },
+        {
+            "en": "Maximum Targets",
+            "translated": "Alvos Máximos"
+        },
+        {
+            "en": "Targets per Arrow",
+            "translated": "Alvos por Seta"
+        },
+        {
+            "en": "Trigger Radius",
+            "translated": "Raio do gatilho"
+        },
+        {
+            "en": "Effect Radius",
+            "translated": "Raio de Efeito"
+        },
+        {
+            "en": "Targets per Axe",
+            "translated": "Alvos por eixo"
+        },
+        {
+            "en": "Targets Dazed",
+            "translated": "Alvos Atraídos"
+        },
+        {
+            "en": "Damage per Pulse",
+            "translated": "Danos por Pulso"
+        },
+        {
+            "en": "Maximum Knockback",
+            "translated": "Máximo knockback"
+        },
+        {
+            "en": "Minimum Knockback",
+            "translated": "Knockback Mínimo"
+        },
+        {
+            "en": "Evasion Duration While Swinging",
+            "translated": "Duração da Evasão enquanto balança"
+        },
+        {
+            "en": "Less than 66% Health",
+            "translated": "Menos de 66% Saúde"
+        },
+        {
+            "en": "Less than 33% Health",
+            "translated": "Menos de 33% Saúde"
+        },
+        {
+            "en": "Trap Radius",
+            "translated": "Raio da Armadilha"
+        },
+        {
+            "en": "Final Attack",
+            "translated": "Ataque Final"
+        },
+        {
+            "en": "Allied Target Radius",
+            "translated": "Raio alvo aliado"
+        },
+        {
+            "en": "Enemy Target Radius",
+            "translated": "Raio alvo inimigo"
+        },
+        {
+            "en": "Poison Cloud Duration",
+            "translated": "Duração da Nuvem Venenosa"
+        },
+        {
+            "en": "Critical Chance Increase",
+            "translated": "Aumento da chance crítica"
+        },
+        {
+            "en": "Venom Duration",
+            "translated": "Duração do Venom"
+        },
+        {
+            "en": "Hyena Allies",
+            "translated": "Aliados Hiena"
+        },
+        {
+            "en": "Front Damage",
+            "translated": "Dano frontal"
+        },
+        {
+            "en": "Back damage",
+            "translated": "Danos nas costas"
+        },
+        {
+            "en": "Shot Damage",
+            "translated": "Danos por Tiro"
+        },
+        {
+            "en": "Initiative",
+            "translated": "Iniciativa"
+        },
+        {
+            "en": "Initial Impact Daze",
+            "translated": "Daze de Impacto Inicial"
+        },
+        {
+            "en": "Base Arm Time",
+            "translated": "Tempo do Braço Base"
+        },
+        {
+            "en": "Caltrops Duration",
+            "translated": "Duração dos Caltrops"
+        },
+        {
+            "en": "Large Explosion",
+            "translated": "Grande Explosão"
+        },
+        {
+            "en": "Small Explosion",
+            "translated": "Explosão Pequena"
+        },
+        {
+            "en": "Maximum Targets per Impact",
+            "translated": "Alvos Máximos por Impacto"
+        },
+        {
+            "en": "Smoke Bomb Radius",
+            "translated": "Raio da bomba de fumaça"
+        },
+        {
+            "en": "Initiative Gain every 10 seconds",
+            "translated": "Iniciativa Ganhe a cada 10 segundos"
+        },
+        {
+            "en": "Smoke Screen Duration",
+            "translated": "Duração da tela de fumaça"
+        },
+        {
+            "en": "Damage When Flanking",
+            "translated": "Danos ao flanquear"
+        },
+        {
+            "en": "Number of Thieves",
+            "translated": "Número de ladrões"
+        },
+        {
+            "en": "Dagger Storm Duration",
+            "translated": "Duração da tempestade de adaga"
+        },
+        {
+            "en": "Endurance Gain",
+            "translated": "Ganho de perseverança"
+        },
+        {
+            "en": "Above 50%",
+            "translated": "Acima de 50%"
+        },
+        {
+            "en": "Below 50%",
+            "translated": "Menos de 50%"
+        },
+        {
+            "en": "Below 25%",
+            "translated": "Abaixo de 25%"
+        },
+        {
+            "en": "Daze from Behind",
+            "translated": "Daze por trás"
+        },
+        {
+            "en": "Stone Duration",
+            "translated": "Duração da Pedra"
+        },
+        {
+            "en": "Minimum Strike Damage",
+            "translated": "Danos mínimos de greve"
+        },
+        {
+            "en": "Maximum Strike Damage",
+            "translated": "Prejuízo máximo da greve"
+        },
+        {
+            "en": "Burning Increase per Might",
+            "translated": "Aumento da Queima por Poder"
+        },
+        {
+            "en": "Maximum Might Threshold",
+            "translated": "Limiar Máximo de Poderes"
+        },
+        {
+            "en": "Critical Damage Increase",
+            "translated": "Aumento de Danos Críticos"
+        },
+        {
+            "en": "Level 1 Damage",
+            "translated": "Danos de Nível 1"
+        },
+        {
+            "en": "Level 2 Damage",
+            "translated": "Dano de Nível 2"
+        },
+        {
+            "en": "Level 3 Damage",
+            "translated": "Danos ao nível 3"
+        },
+        {
+            "en": "Adrenaline",
+            "translated": "Adrenalina"
+        },
+        {
+            "en": "Ammunition Recovered",
+            "translated": "Recuperada a munição"
+        },
+        {
+            "en": "First Chop Damage",
+            "translated": "Danos na Primeira Chop"
+        },
+        {
+            "en": "Second Chop Damage",
+            "translated": "Danos na Segunda Chop"
+        },
+        {
+            "en": "Final chop damage.",
+            "translated": "Danos de corte finais."
+        },
+        {
+            "en": "Damage against Foes under 50% Health",
+            "translated": "Danos contra os Foes abaixo de 50% Saúde"
+        },
+        {
+            "en": "Damage to Controlled or Defiant Foes",
+            "translated": "Danos aos Foes Controlados ou Defiant"
+        },
+        {
+            "en": "Level 1 stun",
+            "translated": "Nível 1 atordoamento"
+        },
+        {
+            "en": "Level 2 stun",
+            "translated": "Nível 2 atordoamento"
+        },
+        {
+            "en": "Level 3 stun",
+            "translated": "Nível 3"
+        },
+        {
+            "en": "Vengeance Duration",
+            "translated": "Duração da Vingança"
+        },
+        {
+            "en": "Percent",
+            "translated": "Percentagem"
+        },
+        {
+            "en": "Damage increase at 50% target health.",
+            "translated": "Os danos aumentam com 50% de saúde alvo."
+        },
+        {
+            "en": "Damage increase at 25% target health.",
+            "translated": "Os danos aumentam com 25% de saúde alvo."
+        },
+        {
+            "en": "Adrenaline If Not Attacked",
+            "translated": "Adrenalina Se Não Atacada"
+        },
+        {
+            "en": "Attack Radius",
+            "translated": "Raio de Ataque"
+        },
+        {
+            "en": "Adrenaline Interval",
+            "translated": "Intervalo Adrenalina"
+        },
+        {
+            "en": "Resistance Interval",
+            "translated": "Intervalo de Resistência"
+        },
+        {
+            "en": "Combo Field Duration",
+            "translated": "Duração do campo combinado"
+        },
+        {
+            "en": "Effective Radius",
+            "translated": "Raio Eficaz"
+        },
+        {
+            "en": "Finisher Radius",
+            "translated": "Raio de Acabamento"
+        },
+        {
+            "en": "Revival Radius",
+            "translated": "Raio de Revival"
+        },
+        {
+            "en": "Number of Strikes",
+            "translated": "Número de greves"
+        },
+        {
+            "en": "Cone Distance",
+            "translated": "Distância do Cone"
+        },
+        {
+            "en": "Endurance per Condition",
+            "translated": "Endurance por Condição"
+        },
+        {
+            "en": "Damage per Strike",
+            "translated": "Danos por greve"
+        },
+        {
+            "en": "Weakened Foe Knockdown",
+            "translated": "Derrota fraca do Foe"
+        },
+        {
+            "en": "Damage per Projectile",
+            "translated": "Danos por Projéctil"
+        },
+        {
+            "en": "Healing Increase per Target",
+            "translated": "Aumento da cura por alvo"
+        },
+        {
+            "en": "Combo Healing",
+            "translated": "Cura de Combo"
+        },
+        {
+            "en": "Healing when lethal damage taken",
+            "translated": "Cura quando os danos letais são causados"
+        },
+        {
+            "en": "Heal on Illusion Summon",
+            "translated": "Cura em Invocação de Ilusão"
+        },
+        {
+            "en": "Passive Life-Siphon Damage",
+            "translated": "Danos Passivos ao Siphon"
+        },
+        {
+            "en": "Passive Life-Siphon Healing",
+            "translated": "Cura Passiva de Sifão"
+        },
+        {
+            "en": "Passive Siphon Targets",
+            "translated": "Alvos Passivos do Sifão"
+        },
+        {
+            "en": "Active Life Siphon Damage",
+            "translated": "Danos por sifão na vida ativa"
+        },
+        {
+            "en": "Active Life Siphon Heal",
+            "translated": "Vida Ativa Sifão Cura"
+        },
+        {
+            "en": "Siphon Cooldown",
+            "translated": "Refrigeração do Sifão"
+        },
+        {
+            "en": "Blade",
+            "translated": "Lâmina"
+        },
+        {
+            "en": "Number of Hammers",
+            "translated": "Número de Martelos"
+        },
+        {
+            "en": "Chaining Damage",
+            "translated": "Danos na Corrente"
+        },
+        {
+            "en": "Chaining Distance",
+            "translated": "Distância da Corrente"
+        },
+        {
+            "en": "Siphon Damage",
+            "translated": "Danos por Sifão"
+        },
+        {
+            "en": "Siphon Healing",
+            "translated": "Cura do sifão"
+        },
+        {
+            "en": "Initial Heal",
+            "translated": "Cura inicial"
+        },
+        {
+            "en": "Enemy Shadowstep Distance",
+            "translated": "Distância Inimigo do Passo das Sombras"
+        },
+        {
+            "en": "Shadowstep Range",
+            "translated": "Intervalo do Passo das Sombras"
+        },
+        {
+            "en": "Strike Delay",
+            "translated": "Atraso de Greve"
+        },
+        {
+            "en": "Width",
+            "translated": "Largura"
+        },
+        {
+            "en": "Damage Increase per Pulse",
+            "translated": "Aumento de danos por pulso"
+        },
+        {
+            "en": "Pass-Through Damage",
+            "translated": "Danos por Passagem"
+        },
+        {
+            "en": "Final Damage",
+            "translated": "Danos Finais"
+        },
+        {
+            "en": "Initial Strike",
+            "translated": "Ataque inicial"
+        },
+        {
+            "en": "Additional Strikes",
+            "translated": "Greves adicionais"
+        },
+        {
+            "en": "Jade Duration",
+            "translated": "Duração do Jade"
+        },
+        {
+            "en": "Rift Damage",
+            "translated": "Danos na Fenda"
+        },
+        {
+            "en": "Delay Time",
+            "translated": "Tempo de Atraso"
+        },
+        {
+            "en": "Healing Fragment",
+            "translated": "Fragmento de Cura"
+        },
+        {
+            "en": "Number of Fragments",
+            "translated": "Número de Fragmentos"
+        },
+        {
+            "en": "Fragment Duration",
+            "translated": "Duração do Fragmento"
+        },
+        {
+            "en": "Conditions Removed per 10 Energy",
+            "translated": "Condições Removidas por 10 Energia"
+        },
+        {
+            "en": "Healing Increase on Enemy Hit",
+            "translated": "Aumento da cura no ataque inimigo"
+        },
+        {
+            "en": "Tether Distance",
+            "translated": "Distância do cabo"
+        },
+        {
+            "en": "Healing per Condition Removed",
+            "translated": "Cura por Condição Removida"
+        },
+        {
+            "en": "Isolated Damage",
+            "translated": "Danos Isolados"
+        },
+        {
+            "en": "Melee Radius",
+            "translated": "Raio de Melee"
+        },
+        {
+            "en": "Conditions Removed per Pulse",
+            "translated": "Condições removidas por pulso"
+        },
+        {
+            "en": "Water Attunement Recharge",
+            "translated": "Recarga de Atuação de Água"
+        },
+        {
+            "en": "First Heal",
+            "translated": "Primeira Cura"
+        },
+        {
+            "en": "Second Heal",
+            "translated": "Segunda Cura"
+        },
+        {
+            "en": "Third Heal",
+            "translated": "Terceira Cura"
+        },
+        {
+            "en": "First Heal Radius",
+            "translated": "Primeiro Raio de Cura"
+        },
+        {
+            "en": "Second Heal Radius",
+            "translated": "Segundo Raio de Cura"
+        },
+        {
+            "en": "Third Heal Radius",
+            "translated": "Terceiro Raio de Cura"
+        },
+        {
+            "en": "Healing per Bandage",
+            "translated": "Cura por bandagem"
+        },
+        {
+            "en": "Bandages",
+            "translated": "Bandagens"
+        },
+        {
+            "en": "Bonus Boons Removed",
+            "translated": "Bonus Boons Removidos"
+        },
+        {
+            "en": "Bonus Adrenaline on Hit",
+            "translated": "Adrenalina de Bônus em Hit"
+        },
+        {
+            "en": "Storm Duration",
+            "translated": "Duração da Tempestade"
+        },
+        {
+            "en": "Velocity Increase",
+            "translated": "Aumento de velocidade"
+        },
+        {
+            "en": "Pulse Damage",
+            "translated": "Danos no Pulso"
+        },
+        {
+            "en": "Attack Interval",
+            "translated": "Intervalo de Ataque"
+        },
+        {
+            "en": "Boon Interval",
+            "translated": "Intervalo de Boon"
+        },
+        {
+            "en": "Sword Radius",
+            "translated": "Raio de Espada"
+        },
+        {
+            "en": "0 Clones",
+            "translated": "0 Clones"
+        },
+        {
+            "en": "Barrier per Hit",
+            "translated": "Barreira por Bater"
+        },
+        {
+            "en": "Maximum Radius",
+            "translated": "Raio Máximo"
+        },
+        {
+            "en": "Strike Interval",
+            "translated": "Intervalo de Greve"
+        },
+        {
+            "en": "Combo Interval",
+            "translated": "Intervalo de combinação"
+        },
+        {
+            "en": "Condition Damage Reduced",
+            "translated": "Redução dos Danos nas Condições"
+        },
+        {
+            "en": "Trap Heal",
+            "translated": "Armadilha Cura"
+        },
+        {
+            "en": "Initial Barrier",
+            "translated": "Barreira Inicial"
+        },
+        {
+            "en": "Pulse Barrier",
+            "translated": "Barreira de pulso"
+        },
+        {
+            "en": "Stun on Melee Hit",
+            "translated": "Bater em Melee Hit"
+        },
+        {
+            "en": "Attack Speed Increase",
+            "translated": "Aumentar a Velocidade de Ataque"
+        },
+        {
+            "en": "Damage to Healing",
+            "translated": "Danos na cura"
+        },
+        {
+            "en": "Berserk Duration Increase",
+            "translated": "Aumento da duração de Berserk"
+        },
+        {
+            "en": "Extended Duration Increase",
+            "translated": "Aumento da Duração Prolongada"
+        },
+        {
+            "en": "Bonus Adrenaline",
+            "translated": "Adrenalina de Bônus"
+        },
+        {
+            "en": "Reveal Radius",
+            "translated": "Revelar o Raio"
+        },
+        {
+            "en": "Maw Barrier Radius",
+            "translated": "Raio de Barreira Maw"
+        },
+        {
+            "en": "Maw Barrier Duration",
+            "translated": "Duração da Barreira Maw"
+        },
+        {
+            "en": "Maximum Wall Hits",
+            "translated": "Máximo de hits de parede"
+        },
+        {
+            "en": "Ending Heal",
+            "translated": "Cura Final"
+        },
+        {
+            "en": "Self-Stun",
+            "translated": "Auto-Estudo"
+        },
+        {
+            "en": "Personal Heal",
+            "translated": "Cura Pessoal"
+        },
+        {
+            "en": "Area Pulse Heal",
+            "translated": "Cura de Pulso de Área"
+        },
+        {
+            "en": "Heal if Endurance is Full",
+            "translated": "Cura se a perseverança estiver plena"
+        },
+        {
+            "en": "Passive Healing",
+            "translated": "Cura Passiva"
+        },
+        {
+            "en": "Healing Interval",
+            "translated": "Intervalo de cura"
+        },
+        {
+            "en": "Active Heal Pulse",
+            "translated": "Pulso de cura ativo"
+        },
+        {
+            "en": "Final Heal Pulse",
+            "translated": "Pulso final da cura"
+        },
+        {
+            "en": "Passive Radius",
+            "translated": "Raio Passivo"
+        },
+        {
+            "en": "Active Radius",
+            "translated": "Raio Activo"
+        },
+        {
+            "en": "Life Force per Melee Hit",
+            "translated": "Força vital por Melee Hit"
+        },
+        {
+            "en": "Base Healing",
+            "translated": "Cura Base"
+        },
+        {
+            "en": "Healing for Each Boon",
+            "translated": "Cura para cada boão"
+        },
+        {
+            "en": "Damage at 50% or Above",
+            "translated": "Danos a 50% ou acima"
+        },
+        {
+            "en": "Damage Below 50%",
+            "translated": "Danos abaixo de 50%"
+        },
+        {
+            "en": "Damage Below 25%",
+            "translated": "Danos abaixo de 25%"
+        },
+        {
+            "en": "Ring Duration",
+            "translated": "Duração do Anel"
+        },
+        {
+            "en": "Maximum Number of Barriers",
+            "translated": "Número máximo de barreiras"
+        },
+        {
+            "en": "Ally Boon Radius",
+            "translated": "Raio de Ally Boon"
+        },
+        {
+            "en": "Number of Leap Finishers",
+            "translated": "Número de Terminadores de Salto"
+        },
+        {
+            "en": "Additional Conditions Transferred",
+            "translated": "Condições adicionais transferidas"
+        },
+        {
+            "en": "Second Strike Damage",
+            "translated": "Segundo dano de ataque"
+        },
+        {
+            "en": "Maximum Number of Horrors",
+            "translated": "Número máximo de Horrores"
+        },
+        {
+            "en": "Missile Launch Interval",
+            "translated": "Intervalo de Lançamento de Mísseis"
+        },
+        {
+            "en": "Initial Strikes",
+            "translated": "Ataques iniciais"
+        },
+        {
+            "en": "Final Strike",
+            "translated": "Ataque Final"
+        },
+        {
+            "en": "First-Hit Life Siphon Healing",
+            "translated": "A cura do sifão do primeiro tiro"
+        },
+        {
+            "en": "Distance Traveled",
+            "translated": "Distância Percorrida"
+        },
+        {
+            "en": "Blast Delay",
+            "translated": "Atraso da Explosão"
+        },
+        {
+            "en": "Missile Radius",
+            "translated": "Raio de Mísseis"
+        },
+        {
+            "en": "Allied Healing",
+            "translated": "Cura Aliada"
+        },
+        {
+            "en": "Energy Gain",
+            "translated": "Ganho de Energia"
+        },
+        {
+            "en": "Evade Distance",
+            "translated": "Distância de Evasão"
+        },
+        {
+            "en": "Maximum Jumps",
+            "translated": "Saltos Máximos"
+        },
+        {
+            "en": "Teleport Radius",
+            "translated": "Raio de Teleporto"
+        },
+        {
+            "en": "Malice Threshold for Stealth",
+            "translated": "Limiar de Malícia para Stealth"
+        },
+        {
+            "en": "Charge Recovery",
+            "translated": "Recuperação de encargos"
+        },
+        {
+            "en": "Charge Time",
+            "translated": "Tempo de Carga"
+        },
+        {
+            "en": "Mirage Duration",
+            "translated": "Duração da Miragem"
+        },
+        {
+            "en": "Ally Healing",
+            "translated": "Cura Aliada"
+        },
+        {
+            "en": "Self Healing",
+            "translated": "Auto- Cura"
+        },
+        {
+            "en": "Heat Threshold",
+            "translated": "Limiar de calor"
+        },
+        {
+            "en": "Additional Walls above 50% Heat",
+            "translated": "Paredes adicionais acima de 50% de calor"
+        },
+        {
+            "en": "Bonus Initiative Gain",
+            "translated": "Ganho da Iniciativa de Bônus"
+        },
+        {
+            "en": "Base Movement Speed",
+            "translated": "Velocidade de movimento de base"
+        },
+        {
+            "en": "Maximum Movement Speed",
+            "translated": "Velocidade máxima de movimento"
+        },
+        {
+            "en": "Secondary Damage",
+            "translated": "Danos Secundários"
+        },
+        {
+            "en": "Life Force Cost",
+            "translated": "Custo da Força de Vida"
+        },
+        {
+            "en": "Cooling Delay",
+            "translated": "Atraso no resfriamento"
+        },
+        {
+            "en": "Heat Lost per Second",
+            "translated": "Calor perdido por segundo"
+        },
+        {
+            "en": "Improved Heat Lost per Second",
+            "translated": "Melhor calor perdido por segundo"
+        },
+        {
+            "en": "Damage Increase against Mark",
+            "translated": "Aumento de Danos contra Marca"
+        },
+        {
+            "en": "Missiles per Target",
+            "translated": "Mísseis por Alvo"
+        },
+        {
+            "en": "Ordnance Count",
+            "translated": "Contagem de munições"
+        },
+        {
+            "en": "Initiative per Malice",
+            "translated": "Iniciativa por Malícia"
+        },
+        {
+            "en": "Self-Heal",
+            "translated": "Auto- Cura"
+        },
+        {
+            "en": "Targets per Ordnance",
+            "translated": "Alvos por ordem"
+        },
+        {
+            "en": "Heal per Hit",
+            "translated": "Cura por Acerto"
+        },
+        {
+            "en": "Heat Gained",
+            "translated": "Ganho de Calor"
+        },
+        {
+            "en": "Pull Damage",
+            "translated": "Retirar Danos"
+        },
+        {
+            "en": "Radius and Pull Increase above 50% Heat",
+            "translated": "Aumento de Raio e Puxe acima de 50% de calor"
+        },
+        {
+            "en": "Field Damage",
+            "translated": "Danos no Campo"
+        },
+        {
+            "en": "Field Pulses",
+            "translated": "Pulsos de Campo"
+        },
+        {
+            "en": "Field Number of Targets",
+            "translated": "Número de alvos no campo"
+        },
+        {
+            "en": "Damage Increase above 50% Heat",
+            "translated": "Aumento de danos acima de 50% calor"
+        },
+        {
+            "en": "Time to Trigger Passive",
+            "translated": "Tempo para disparar passiva"
+        },
+        {
+            "en": "Second Strike",
+            "translated": "Segunda Greve"
+        },
+        {
+            "en": "Duration Increase above 50% Heat",
+            "translated": "Aumento da duração acima de 50% calor"
+        },
+        {
+            "en": "Heat per Second",
+            "translated": "Calor por segundo"
+        },
+        {
+            "en": "Maximum Heat",
+            "translated": "Calor máximo"
+        },
+        {
+            "en": "Kit disable time",
+            "translated": "Tempo de desactivação do kit"
+        },
+        {
+            "en": "Targets per Field",
+            "translated": "Alvos por Campo"
+        },
+        {
+            "en": "Self Barrier",
+            "translated": "Auto Barreira"
+        },
+        {
+            "en": "Ally Barrier",
+            "translated": "Barreira Ally"
+        },
+        {
+            "en": "Self Heal",
+            "translated": "Auto- Cura"
+        },
+        {
+            "en": "Blades Created",
+            "translated": "Lâminas Criadas"
+        },
+        {
+            "en": "Maximum Malice",
+            "translated": "Máxima Malícia"
+        },
+        {
+            "en": "Malice Gained upon Hit",
+            "translated": "Malícia contraída"
+        },
+        {
+            "en": "Malice Gained upon Critical Hit",
+            "translated": "Malícia ganha em golpes críticos"
+        },
+        {
+            "en": "Damage Increase to Tethered Target",
+            "translated": "Aumento de Danos ao Alvo Amarrado"
+        },
+        {
+            "en": "Heat Lost",
+            "translated": "Calor Perdido"
+        },
+        {
+            "en": "Recharge Time",
+            "translated": "Tempo de recarga"
+        },
+        {
+            "en": "Impact Damage",
+            "translated": "Danos de impacto"
+        },
+        {
+            "en": "Initial Attack",
+            "translated": "Ataque inicial"
+        },
+        {
+            "en": "Lightning Strike Damage",
+            "translated": "Queda de raios"
+        },
+        {
+            "en": "Additional Conditions above 50% Heat",
+            "translated": "Condições adicionais acima de 50% calor"
+        },
+        {
+            "en": "Initial Self-Damage",
+            "translated": "Prejuízo inicial"
+        },
+        {
+            "en": "Self-Damage over Time",
+            "translated": "Auto- Dano ao longo do tempo"
+        },
+        {
+            "en": "Increased Tool Belt Recharge",
+            "translated": "Recarga aumentada da correia da ferramenta"
+        },
+        {
+            "en": "Additional Boons Removed",
+            "translated": "Índios Adicionais Removidos"
+        },
+        {
+            "en": "Damage on Untargeted Foes",
+            "translated": "Prejuízos em Foes não visados"
+        },
+        {
+            "en": "Damage Bonus per Stack",
+            "translated": "Bônus de danos por pilha"
+        },
+        {
+            "en": "Projectile Range",
+            "translated": "Intervalo do Projéctil"
+        },
+        {
+            "en": "Counterattack Evasion",
+            "translated": "Evasão contra- ataque"
+        },
+        {
+            "en": "Stance Endurance Gain",
+            "translated": "Ganho de perseverança de resistência"
+        },
+        {
+            "en": "Maximum Condition Scaling",
+            "translated": "Escala de Condição Máxima"
+        },
+        {
+            "en": "Might Radius",
+            "translated": "Pode ser o Raio"
+        },
+        {
+            "en": "Seek Range",
+            "translated": "Procurar o Intervalo"
+        },
+        {
+            "en": "Attacks to Trigger Passive",
+            "translated": "Ataques para disparar passiva"
+        },
+        {
+            "en": "Number of Enemy Targets",
+            "translated": "Número de Alvos Inimigos"
+        },
+        {
+            "en": "Damaging Conditions Removed",
+            "translated": "Condições de Damagem Removidas"
+        },
+        {
+            "en": "Radius Increase above 50% Heat",
+            "translated": "Aumento de raios acima de 50% de calor"
+        },
+        {
+            "en": "Ally Boon Duration",
+            "translated": "Duração da Ally Boon"
+        },
+        {
+            "en": "Barrier Applied above 50% Heat",
+            "translated": "Barreira aplicada acima de 50% calor"
+        },
+        {
+            "en": "Effectiveness Increased",
+            "translated": "Aumento da eficácia"
+        },
+        {
+            "en": "Daze vs. Skill Use",
+            "translated": "Uso do Daze vs. Habilidade"
+        },
+        {
+            "en": "Per Condition Removed",
+            "translated": "Por Condição Removida"
+        },
+        {
+            "en": "Conditions Removed Each Second",
+            "translated": "Condições removidas a cada segundo"
+        },
+        {
+            "en": "Root Attack Interval",
+            "translated": "Intervalo de Ataque Raiz"
+        },
+        {
+            "en": "Root Lifetime",
+            "translated": "Vida de raiz"
+        },
+        {
+            "en": "Primary Strike Damage",
+            "translated": "Danos primários de greve"
+        },
+        {
+            "en": "Maximum Impacts",
+            "translated": "Impactos Máximos"
+        },
+        {
+            "en": "Level 1 Boons Removed",
+            "translated": "Retirados os Bónus do Nível 1"
+        },
+        {
+            "en": "Level 2 Boons Removed",
+            "translated": "Boons Nível 2 Removidos"
+        },
+        {
+            "en": "Level 3 Boons Removed",
+            "translated": "Nível 3 Bóons Removidos"
+        },
+        {
+            "en": "Velocity Increase above 50% Heat",
+            "translated": "Aumento de velocidade acima de 50% de calor"
+        },
+        {
+            "en": "Travel Damage",
+            "translated": "Danos nas Viagens"
+        },
+        {
+            "en": "Additional Strike Damage",
+            "translated": "Danos adicionais de ataque"
+        },
+        {
+            "en": "Mud Duration",
+            "translated": "Duração da Lama"
+        },
+        {
+            "en": "Damage per Boon",
+            "translated": "Danos por Boon"
+        },
+        {
+            "en": "Delayed Damage",
+            "translated": "Danos Atrasados"
+        },
+        {
+            "en": "Initial Daze",
+            "translated": "Daze Inicial"
+        },
+        {
+            "en": "Delayed Daze",
+            "translated": "Daze Atrasado"
+        },
+        {
+            "en": "Cyclone Lifetime",
+            "translated": "Tempo de vida do ciclone"
+        },
+        {
+            "en": "Cyclone Radius",
+            "translated": "Raio Ciclone"
+        },
+        {
+            "en": "Initial Targets",
+            "translated": "Alvos Iniciais"
+        },
+        {
+            "en": "Number of Targets per Cyclone",
+            "translated": "Número de alvos por ciclone"
+        },
+        {
+            "en": "Barrier per Pulse",
+            "translated": "Barreira por pulso"
+        },
+        {
+            "en": "Break Barrier",
+            "translated": "Quebrar Barreira"
+        },
+        {
+            "en": "Pull Distance",
+            "translated": "Distância de puxar"
+        },
+        {
+            "en": "Bonus Damage per Malice",
+            "translated": "Danos de Bônus por Malícia"
+        },
+        {
+            "en": "Chance on Hit",
+            "translated": "Possibilidade em Hit"
+        },
+        {
+            "en": "Torment Duration per Malice",
+            "translated": "Duração do tormento por malícia"
+        },
+        {
+            "en": "Endurance per Malice",
+            "translated": "Endurance por Malícia"
+        },
+        {
+            "en": "Life Force per Foe",
+            "translated": "Força vital por Foe"
+        },
+        {
+            "en": "Heal per Condition Removed",
+            "translated": "Cura por Condição Removida"
+        },
+        {
+            "en": "Barrier on Detonation",
+            "translated": "Barreira de Detonação"
+        },
+        {
+            "en": "Barrier Radius",
+            "translated": "Raio de Barreira"
+        },
+        {
+            "en": "Revive per Pulse",
+            "translated": "Reviver por Pulso"
+        },
+        {
+            "en": "Initial Impact Damage",
+            "translated": "Danos de impacto iniciais"
+        },
+        {
+            "en": "Pulsing Damage",
+            "translated": "Danos Pulsantes"
+        },
+        {
+            "en": "Recharge Increased",
+            "translated": "Recarga aumentada"
+        },
+        {
+            "en": "Recharge increase per gyro",
+            "translated": "Aumento da recarga por giroscópio"
+        },
+        {
+            "en": "Rechage Reduced per Clone",
+            "translated": "Rechage Reduzida por Clone"
+        },
+        {
+            "en": "Flurry Damage",
+            "translated": "Danos por Flurry"
+        },
+        {
+            "en": "Hits to Cause Flurry",
+            "translated": "Bate para Causar Flurry"
+        },
+        {
+            "en": "Flurry Count Tracking Duration",
+            "translated": "Duração do Rastreamento da Contagem Flurry"
+        },
+        {
+            "en": "Life Force Gain per Target",
+            "translated": "Ganho da força vital por alvo"
+        },
+        {
+            "en": "Life Force Gain per Bullet",
+            "translated": "Ganho da força vital por bala"
+        },
+        {
+            "en": "Secondary Attacks",
+            "translated": "Ataques Secundários"
+        },
+        {
+            "en": "Outgoing Damage",
+            "translated": "Danos resultantes"
+        },
+        {
+            "en": "Returning Damage",
+            "translated": "Retornando Danos"
+        },
+        {
+            "en": "Daggers Thrown",
+            "translated": "Adagas Lançadas"
+        },
+        {
+            "en": "Initial Target Knockdown Time",
+            "translated": "Nocaute inicial do alvo Hora"
+        },
+        {
+            "en": "Maximum Knockback Distance",
+            "translated": "Distância máxima de knockback"
+        },
+        {
+            "en": "Daze per Blade",
+            "translated": "Daze por lâmina"
+        },
+        {
+            "en": "Storm Damage",
+            "translated": "Danos causados pela tempestade"
+        },
+        {
+            "en": "Blade Damage",
+            "translated": "Danos na lâmina"
+        },
+        {
+            "en": "Blades Launched",
+            "translated": "Lâminas Lançadas"
+        },
+        {
+            "en": "Strike Damage per Blade Spent",
+            "translated": "Dano de greve por lâmina gasto"
+        },
+        {
+            "en": "Heal If Attacked",
+            "translated": "Cura Se Atacado"
+        },
+        {
+            "en": "Heal if no attacks are reversed.",
+            "translated": "Cure se nenhum ataque for invertido."
+        },
+        {
+            "en": "Heal on Trigger",
+            "translated": "Cura em Trigger"
+        },
+        {
+            "en": "Ammo Restored",
+            "translated": "Munições Restauradas"
+        },
+        {
+            "en": "Base Endurance Gain",
+            "translated": "Ganho de Endurance Base"
+        },
+        {
+            "en": "Endurance per Hit",
+            "translated": "Endurance por Hit"
+        },
+        {
+            "en": "Passthrough Damage",
+            "translated": "Danos por Passagem"
+        },
+        {
+            "en": "Energy Cost",
+            "translated": "Custo da Energia"
+        },
+        {
+            "en": "Base Heal",
+            "translated": "Cura Base"
+        },
+        {
+            "en": "Healing Increase per Threshold",
+            "translated": "Aumento da cura por limiar"
+        },
+        {
+            "en": "Healing per Condition",
+            "translated": "Cura por Condição"
+        },
+        {
+            "en": "Endurance per Ally",
+            "translated": "Endurance per Ally"
+        },
+        {
+            "en": "Damage per Bullet",
+            "translated": "Danos por bala"
+        },
+        {
+            "en": "Consumes All Ammunition",
+            "translated": "Consome Todas as Munições"
+        },
+        {
+            "en": "Minimum Pushback",
+            "translated": "Empurramento mínimo"
+        },
+        {
+            "en": "Maximum Pushback",
+            "translated": "Retrocesso máximo"
+        },
+        {
+            "en": "Flow Cost",
+            "translated": "Custo do Fluxo"
+        },
+        {
+            "en": "Flow Drain per Interval",
+            "translated": "Drenagem de fluxo por intervalo"
+        },
+        {
+            "en": "Ammunition Used",
+            "translated": "Munição usada"
+        },
+        {
+            "en": "Damage per Block",
+            "translated": "Danos por bloco"
+        },
+        {
+            "en": "Endurance per Target",
+            "translated": "Endurance por Alvo"
+        },
+        {
+            "en": "Quickness Increase per Target Struck",
+            "translated": "Aumento de rapidez por alvo"
+        },
+        {
+            "en": "Initial Conditions Removed",
+            "translated": "Condições Iniciais Removidas"
+        },
+        {
+            "en": "Conditions Removed per Hit",
+            "translated": "Condições Removidas por Hit"
+        },
+        {
+            "en": "((996198))",
+            "translated": "(996198)"
+        },
+        {
+            "en": "Ammo Reloaded",
+            "translated": "Recarregadas as munições"
+        },
+        {
+            "en": "Additional Charges per Interval",
+            "translated": "Taxas adicionais por intervalo"
+        },
+        {
+            "en": "Blocking Duration",
+            "translated": "Duração do Bloqueamento"
+        },
+        {
+            "en": "Number of Targets per Impact",
+            "translated": "Número de alvos por impacto"
+        },
+        {
+            "en": "Random Impacts",
+            "translated": "Impactos Aleatórios"
+        },
+        {
+            "en": "Guaranteed Enemy Impacts",
+            "translated": "Impactos do inimigo garantidos"
+        },
+        {
+            "en": "Lesser Healing",
+            "translated": "Cura menor"
+        },
+        {
+            "en": "Greater Healing",
+            "translated": "Maior Cura"
+        },
+        {
+            "en": "Boon Increase per Target Struck",
+            "translated": "Aumento de Boon por alvo"
+        },
+        {
+            "en": "Additional Flow",
+            "translated": "Fluxo adicional"
+        },
+        {
+            "en": "Maximum Flow",
+            "translated": "Fluxo Máximo"
+        },
+        {
+            "en": "Adrenaline to Flow Conversion Rate",
+            "translated": "Taxa de conversão de adrenalina para fluxo"
+        },
+        {
+            "en": "Initial Healing",
+            "translated": "Cura Inicial"
+        },
+        {
+            "en": "Delayed Healing",
+            "translated": "Cura tardia"
+        },
+        {
+            "en": "Endurance Regeneration Increase",
+            "translated": "Aumento da Regeneração de Endurance"
+        },
+        {
+            "en": "Heal Pulse",
+            "translated": "Pulso de cura"
+        },
+        {
+            "en": "Minimum Recharge",
+            "translated": "Recarga mínima"
+        },
+        {
+            "en": "Maximum Recharge",
+            "translated": "Recarga máxima"
+        },
+        {
+            "en": "First Hit Radius",
+            "translated": "Primeiro Bater no Raio"
+        },
+        {
+            "en": "Second Hit Radius",
+            "translated": "Segundo Raio Bater"
+        },
+        {
+            "en": "Third Hit Radius",
+            "translated": "Terceiro Raio de Ataque"
+        },
+        {
+            "en": "Follow-Up Damage",
+            "translated": "Danos de acompanhamento"
+        },
+        {
+            "en": "Follow-Up Daze",
+            "translated": "Acompanhamento do Daze"
+        },
+        {
+            "en": "Tethered Ally Heal per Target",
+            "translated": "Aliado Amarrado Cura por Alvo"
+        },
+        {
+            "en": "Cage Radius",
+            "translated": "Raio de gaiola"
+        },
+        {
+            "en": "Damage Increase vs. Disabled or Defiant Foes",
+            "translated": "Aumento de Danos vs. Deficientes ou Defiant Foes"
+        },
+        {
+            "en": "Damage Increase per Condition",
+            "translated": "Aumento de Danos por Condição"
+        },
+        {
+            "en": "Shroud Degeneration Rate",
+            "translated": "Taxa de Degeneração do Sudário"
+        },
+        {
+            "en": "Tethered Ally Healing per Target",
+            "translated": "Ally Amarrado Cura por Alvo"
+        },
+        {
+            "en": "Bonus Defiance Damage",
+            "translated": "Dano por Defiance"
+        },
+        {
+            "en": "Follow-Up Boons Removed",
+            "translated": "Boões de Acompanhamento Removidos"
+        },
+        {
+            "en": "Minimum Barrier",
+            "translated": "Barreira Mínima"
+        },
+        {
+            "en": "Maximum Barrier",
+            "translated": "Barreira Máxima"
+        },
+        {
+            "en": "First-Hit Recharge Reduction",
+            "translated": "Redução da Recarga do Primeiro Acerto"
+        },
+        {
+            "en": "Additional-Hit Recharge Reduction",
+            "translated": "Redução adicional de recarga"
+        },
+        {
+            "en": "Shadow Force",
+            "translated": "Força Sombra"
+        },
+        {
+            "en": "Missile Explosion Radius",
+            "translated": "Raio de Explosão de Mísseis"
+        },
+        {
+            "en": "Targets per Missile",
+            "translated": "Alvos por Míssil"
+        },
+        {
+            "en": "Knockback on Landing",
+            "translated": "Knockback na aterrissagem"
+        },
+        {
+            "en": "Radius Increase",
+            "translated": "Aumento do Raio"
+        },
+        {
+            "en": "Maximum Travel Distance",
+            "translated": "Distância máxima de viagem"
+        },
+        {
+            "en": "Base Pull",
+            "translated": "Puxar Base"
+        },
+        {
+            "en": "Pull Distance Increase per Hit",
+            "translated": "Puxe o aumento de distância por hit"
+        },
+        {
+            "en": "Conditions per Pulse",
+            "translated": "Condições por Pulse"
+        },
+        {
+            "en": "Area Heal",
+            "translated": "Área Cura"
+        },
+        {
+            "en": "Boons per Pulse",
+            "translated": "Boons por Pulso"
+        },
+        {
+            "en": "Overcharged Damage Increase",
+            "translated": "Aumento de Danos Sobrecarregados"
+        },
+        {
+            "en": "Supercharged Damage Increase",
+            "translated": "Aumento de Danos Supercarregados"
+        },
+        {
+            "en": "Adrenaline per Boon Removed",
+            "translated": "Adrenalina por Boon Removido"
+        },
+        {
+            "en": "Damage Increased While Bleeding",
+            "translated": "Os danos aumentam ao sangrar"
+        },
+        {
+            "en": "Healing Converted",
+            "translated": "Cura Convertida"
+        },
+        {
+            "en": "Portal Duration",
+            "translated": "Duração do Portal"
+        },
+        {
+            "en": "Portal Uses",
+            "translated": "Usos do Portal"
+        },
+        {
+            "en": "Maximum Teleport Distance",
+            "translated": "Distância máxima de teletransporte"
+        },
+        {
+            "en": "Singularity Shot Recharge Increase",
+            "translated": "Singularity Shot Recharge Aumente"
+        },
+        {
+            "en": "Damage Increase per Interval",
+            "translated": "Aumento de Danos por Intervalo"
+        },
+        {
+            "en": "Max Damage Increase",
+            "translated": "Aumento máximo de danos"
+        },
+        {
+            "en": "Barrier Increase per Interval",
+            "translated": "Aumento da barreira por intervalo"
+        },
+        {
+            "en": "Max Barrier",
+            "translated": "Barreira Máxima"
+        },
+        {
+            "en": "Final Slam Damage",
+            "translated": "Danos finais de golpes"
+        },
+        {
+            "en": "Final Slam Radius",
+            "translated": "Raio de Slam Final"
+        },
+        {
+            "en": "Chain Reaction Availability Window",
+            "translated": "Janela de Disponibilidade de Reação em Cadeia"
+        },
+        {
+            "en": "Shock Damage",
+            "translated": "Danos por Choque"
+        },
+        {
+            "en": "Shock Targets",
+            "translated": "Alvos de Choque"
+        },
+        {
+            "en": "Chain Reaction Conditions Removed",
+            "translated": "Condições de Reacção em Cadeia"
+        },
+        {
+            "en": "Chain Reaction Daze",
+            "translated": "Daze de Reação em Cadeia"
+        },
+        {
+            "en": "Barrier on hit",
+            "translated": "Barreira na batida"
+        },
+        {
+            "en": "Conditions removed on hit.",
+            "translated": "Condições removidas ao ser atingido."
+        },
+        {
+            "en": "Level 1 Healing",
+            "translated": "Nível 1 Cura"
+        },
+        {
+            "en": "Level 2 Healing",
+            "translated": "Nível 2 Cura"
+        },
+        {
+            "en": "Level 3 Healing",
+            "translated": "Nível 3 Cura"
+        },
+        {
+            "en": "Minimum Time between Ignitions",
+            "translated": "Mínimo Tempo entre as Ignições"
+        },
+        {
+            "en": "Singularity Duration",
+            "translated": "Duração da Singularidade"
+        },
+        {
+            "en": "Healing per Unique Condition",
+            "translated": "Cura por Condição Única"
+        },
+        {
+            "en": "Detonation Window",
+            "translated": "Janela de Detonação"
+        },
+        {
+            "en": "Aftershock Radius",
+            "translated": "Raio pós-choque"
+        },
+        {
+            "en": "Initial Strike Damage",
+            "translated": "Danos de ataque iniciais"
+        },
+        {
+            "en": "Aftershock Damage",
+            "translated": "Danos após o choque"
+        },
+        {
+            "en": "Initial Strike Radius",
+            "translated": "Raio de ataque inicial"
+        },
+        {
+            "en": "Damage Increase per Malice",
+            "translated": "Aumento de Danos por Malícia"
+        },
+        {
+            "en": "Duration Increase per Malice",
+            "translated": "Aumento da duração por malícia"
+        },
+        {
+            "en": "Abyssal Raze Cooldown Reduction",
+            "translated": "Redução de resfriamento do Abyssal Raze"
+        },
+        {
+            "en": "Illuminated Healing",
+            "translated": "Cura Iluminada"
+        },
+        {
+            "en": "Empowered Phantasms Created",
+            "translated": "Fantasmas Empoderados Criados"
+        },
+        {
+            "en": "Phantasm Attack Radius",
+            "translated": "Raio de ataque fantasma"
+        },
+        {
+            "en": "Dash Range",
+            "translated": "Intervalo de Partidas"
+        },
+        {
+            "en": "Initial Attack Damage",
+            "translated": "Danos no Ataque Inicial"
+        },
+        {
+            "en": "First-Strike Radius",
+            "translated": "Raio de Primeiro Ataque"
+        },
+        {
+            "en": "Second-Strike Radius",
+            "translated": "Raio de Segundo Ataque"
+        },
+        {
+            "en": "Third-Strike Radius",
+            "translated": "Raio de Terceiro Ataque"
+        },
+        {
+            "en": "Empowered Stun",
+            "translated": "Empoderado Stun"
+        },
+        {
+            "en": "Spear Damage",
+            "translated": "Danos por Lança"
+        },
+        {
+            "en": "Shard Damage",
+            "translated": "Dano de Shard"
+        },
+        {
+            "en": "Shards Produced",
+            "translated": "Shards Produzido"
+        },
+        {
+            "en": "Shock-Wave Damage",
+            "translated": "Danos na onda de choque"
+        },
+        {
+            "en": "Shock-Wave Radius",
+            "translated": "Raio de onda de choque"
+        },
+        {
+            "en": "Additional Stacks vs. High Health",
+            "translated": "Pilha Adicional vs. Alta Saúde"
+        },
+        {
+            "en": "Center Radius",
+            "translated": "Raio central"
+        },
+        {
+            "en": "Additional Blocks",
+            "translated": "Blocos Adicionais"
+        },
+        {
+            "en": "Web Duration",
+            "translated": "Duração Web"
+        },
+        {
+            "en": "Net Radius",
+            "translated": "Raio Net"
+        },
+        {
+            "en": "Focused Target Damage",
+            "translated": "Danos Focados no Alvo"
+        },
+        {
+            "en": "First-Hit Life Force",
+            "translated": "Força vital de primeiro golpe"
+        },
+        {
+            "en": "Additional-Hit Life Force",
+            "translated": "Força de Vida Adicional"
+        },
+        {
+            "en": "Additional Shards vs. Skill Use",
+            "translated": "Shards adicionais vs. Habilidade"
+        },
+        {
+            "en": "Life Force vs. Skill Use",
+            "translated": "Força de Vida vs. Habilidade"
+        },
+        {
+            "en": "Shard Threshold",
+            "translated": "Limiar Shard"
+        },
+        {
+            "en": "Damage Increase per Stack",
+            "translated": "Aumento de Danos por Pilha"
+        },
+        {
+            "en": "Maximum Stacks per Use",
+            "translated": "Máximas pilhas por uso"
+        },
+        {
+            "en": "Bonus Lifesteal vs. Vulnerable",
+            "translated": "Roubo de Vida de Bônus vs Vulnerável"
+        },
+        {
+            "en": "Additional Stacks",
+            "translated": "Pilha Adicional"
+        },
+        {
+            "en": "Outer-Edge Damage Increase",
+            "translated": "Aumento de Danos no Domínio Exterior"
+        },
+        {
+            "en": "Outer-Edge Critical Chance",
+            "translated": "Chance Crítica do Domínio Exterior"
+        },
+        {
+            "en": "Inner Radius",
+            "translated": "Raio Interior"
+        },
+        {
+            "en": "Outer Radius",
+            "translated": "Raio Exterior"
+        },
+        {
+            "en": "Maximum Number of Allied Targets",
+            "translated": "Número máximo de alvos aliados"
+        },
+        {
+            "en": "Targets per Shard",
+            "translated": "Alvos por Shard"
+        },
+        {
+            "en": "Extra Impacts",
+            "translated": "Impactos Extra"
+        },
+        {
+            "en": "Maximum Strikes per Target",
+            "translated": "Máximo de greves por alvo"
+        },
+        {
+            "en": "Extra Strikes per Target",
+            "translated": "Greves extras por alvo"
+        },
+        {
+            "en": "Shard Radius",
+            "translated": "Raio de Shard"
+        },
+        {
+            "en": "Additional Hit Healing",
+            "translated": "Curas adicionais"
+        },
+        {
+            "en": "Pursuit Duration",
+            "translated": "Duração da Busca"
+        },
+        {
+            "en": "Damage Increase vs. Low Health",
+            "translated": "Aumento de Danos vs. Baixa Saúde"
+        },
+        {
+            "en": "Healing Increase at Low Health",
+            "translated": "Aumento da cura na baixa saúde"
+        },
+        {
+            "en": "Additional Shards vs. Isolated",
+            "translated": "Shards adicionais vs. Isolados"
+        },
+        {
+            "en": "Unfocused Target Damage",
+            "translated": "Dano por Alvo Desfocado"
+        },
+        {
+            "en": "Arming Time",
+            "translated": "Tempo de Armação"
+        },
+        {
+            "en": "Maximum Mines",
+            "translated": "Minas Máximas"
+        },
+        {
+            "en": "Empowered Healing",
+            "translated": "Cura empoderada"
+        },
+        {
+            "en": "Honey Pool Duration",
+            "translated": "Duração do Pool de Mel"
+        },
+        {
+            "en": "First-Hit Siphon Healing",
+            "translated": "Cura do Sifão de Primeiro Acerto"
+        },
+        {
+            "en": "Max Bombs",
+            "translated": "Bombas Máximas"
+        },
+        {
+            "en": "Additional Time per Note",
+            "translated": "Tempo adicional por nota"
+        },
+        {
+            "en": "Final Smash",
+            "translated": "Esmagar Final"
+        },
+        {
+            "en": "Maximum Stacks Transferred",
+            "translated": "Máximas pilhas transferidas"
+        },
+        {
+            "en": "Arrows Restored",
+            "translated": "Setas Restauradas"
+        },
+        {
+            "en": "Additional Bomb Damage",
+            "translated": "Danos adicionais à bomba"
+        },
+        {
+            "en": "Attribute Increase",
+            "translated": "Aumento de Atributos"
+        },
+        {
+            "en": "Primary Target",
+            "translated": "Alvo primário"
+        },
+        {
+            "en": "Nearby Targets",
+            "translated": "Alvos próximos"
+        },
+        {
+            "en": "Time to Self-Destruct",
+            "translated": "Tempo para autodestruir"
+        },
+        {
+            "en": "Arrow Cost",
+            "translated": "Custo da Seta"
+        },
+        {
+            "en": "Conditions Removed on Skill Use",
+            "translated": "Condições Removidas na Habilidade de Uso"
+        },
+        {
+            "en": "Increase with Barrier",
+            "translated": "Aumentar com a Barreira"
+        },
+        {
+            "en": "Ally Stacks",
+            "translated": "Ally Stacks"
+        },
+        {
+            "en": "Center Daze",
+            "translated": "Centro de Daze"
+        },
+        {
+            "en": "Duration Increase per Note",
+            "translated": "Aumento de duração por nota"
+        },
+        {
+            "en": "Echo Healing",
+            "translated": "Cura do Eco"
+        },
+        {
+            "en": "Echo Adrenaline",
+            "translated": "Echo Adrenalina"
+        },
+        {
+            "en": "Break Stun Recharge Increase",
+            "translated": "Quebrar o Aumento de Recarga Stun"
+        },
+        {
+            "en": "Maximum-Strength Daze",
+            "translated": "Daze de Força Máxima"
+        },
+        {
+            "en": "Initiative Refund",
+            "translated": "Reembolso da iniciativa"
+        },
+        {
+            "en": "Base Health Damage",
+            "translated": "Danos à Saúde Base"
+        },
+        {
+            "en": "Increase per Instrument",
+            "translated": "Aumento por instrumento"
+        },
+        {
+            "en": "Echo Barrier",
+            "translated": "Barreira de Eco"
+        },
+        {
+            "en": "Trigger Health Threshold",
+            "translated": "Ativar limiar de saúde"
+        },
+        {
+            "en": "Maximum Damage Percent",
+            "translated": "Percentagem máxima de danos"
+        },
+        {
+            "en": "Pulse Healing",
+            "translated": "Cura do Pulso"
+        },
+        {
+            "en": "Damage Radius",
+            "translated": "Raio de Danos"
+        },
+        {
+            "en": "Traveling Tornado Damage",
+            "translated": "Danos no Tornado"
+        },
+        {
+            "en": "Stationary Tornado Damage",
+            "translated": "Danos no Tornado Estacionário"
+        },
+        {
+            "en": "Maximum Launch Distance",
+            "translated": "Distância máxima de lançamento"
+        },
+        {
+            "en": "Ally Duration",
+            "translated": "Duração Ally"
+        },
+        {
+            "en": "Conditions Removed per Second",
+            "translated": "Condições removidas por segundo"
+        },
+        {
+            "en": "Adrenaline per Enemy Struck",
+            "translated": "Adrenalina por Enemy Struck"
+        },
+        {
+            "en": "Damage Increase per Spirit",
+            "translated": "Aumento de Danos por Espírito"
+        },
+        {
+            "en": "Minimum Recharge Time",
+            "translated": "Tempo mínimo de recarga"
+        },
+        {
+            "en": "Long-Range Daze",
+            "translated": "Daze de Longa Distância"
+        },
+        {
+            "en": "Medium-Range Daze",
+            "translated": "Daze de Média Distância"
+        },
+        {
+            "en": "Close-Range Stun",
+            "translated": "Perturbação de Próxima Distância"
+        },
+        {
+            "en": "Close-Range Radius",
+            "translated": "Raio de Próxima Distância"
+        },
+        {
+            "en": "Medium-Range Radius",
+            "translated": "Raio de média gama"
+        },
+        {
+            "en": "Long-Range Radius",
+            "translated": "Raio de Longa Distância"
+        },
+        {
+            "en": "Echo Bonus Defiance Damage",
+            "translated": "Echo Bonus Defiance Dano"
+        },
+        {
+            "en": "Minimum Number of Projectiles",
+            "translated": "Número mínimo de projéteis"
+        },
+        {
+            "en": "Maximum Number of Projectiles",
+            "translated": "Número máximo de projéteis"
+        },
+        {
+            "en": "Damage Reduction below 50% Health",
+            "translated": "Redução de danos abaixo de 50% Saúde"
+        },
+        {
+            "en": "Healing per Second",
+            "translated": "Cura por segundo"
+        },
+        {
+            "en": "Healing Increase",
+            "translated": "Aumento da Cura"
+        },
+        {
+            "en": "Damage (over 20 Might)",
+            "translated": "Danos (mais de 20 Poderes)"
+        },
+        {
+            "en": "Damage (10–20 Might)",
+            "translated": "Danos (10-20 Pode)"
+        },
+        {
+            "en": "Damage (under 10 Might)",
+            "translated": "Danos (menos de 10 anos)"
+        },
+        {
+            "en": "Additional Energy Drained",
+            "translated": "Energia adicional drenada"
+        },
+        {
+            "en": "Additional Allies Affected",
+            "translated": "Aliados adicionais afetados"
+        },
+        {
+            "en": "Damage Increase per Affinity",
+            "translated": "Aumento de Danos por Afinidade"
+        },
+        {
+            "en": "Barrier Increase per Affinity",
+            "translated": "Aumento da barreira por afinidade"
+        },
+        {
+            "en": "Additional Energy per Ally",
+            "translated": "Energia adicional por aliado"
+        },
+        {
+            "en": "Duration Increase per Affinity",
+            "translated": "Aumento da duração por afinidade"
+        },
+        {
+            "en": "Duration Decrease per Affinity",
+            "translated": "Diminuição da duração por afinidade"
+        },
+        {
+            "en": "First Shock Wave",
+            "translated": "Primeira onda de choque"
+        },
+        {
+            "en": "Second Shock Wave",
+            "translated": "Segunda onda de choque"
+        },
+        {
+            "en": "Third Shock Wave",
+            "translated": "Terceira onda de choque"
+        },
+        {
+            "en": "Healing per Bleeding Stack",
+            "translated": "Cura por Pilha Sangrante"
+        },
+        {
+            "en": "Maximum Bleeding Scaling",
+            "translated": "Escala Máxima de Sangramento"
+        },
+        {
+            "en": "Final Slash Damage",
+            "translated": "Dano final do golpe"
         }
     ]
 }
