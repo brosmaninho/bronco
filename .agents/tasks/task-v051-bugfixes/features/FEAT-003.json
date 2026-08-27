@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "BUG 3: The uninstaller (scripts/uninstall.ps1) does not remove all Bronco files. Since v0.3+ Bronco creates in the GW2 folder: d3d11.dll, bronco_ocr.dll, config/, data/ (dictionaries + tessdata), AND runtime-generated files bronco_log.txt and bronco_imgui.ini next to the proxy DLL. The uninstaller currently handles d3d11.dll, bronco_ocr.dll, config/, and data/ but does NOT remove bronco_log.txt or bronco_imgui.ini. Add removal of those two runtime files. This is a PowerShell-only change, fully independent of FEAT-001 and FEAT-002.",
+  "status": "completed",
+  "steps": [
+    "In scripts/uninstall.ps1, define path variables for the two runtime files near the existing $dllPath/$ocrDllPath/$configPath/$dataPath definitions (Passo 2): $logPath = Join-Path $gw2Path 'bronco_log.txt' and $iniPath = Join-Path $gw2Path 'bronco_imgui.ini'.",
+    "Include the two files in the 'Bronco encontrado' detection ($broncoFound) so the uninstaller recognizes an install even if only these files remain: if (Test-Path $logPath) { $broncoFound = $true }; if (Test-Path $iniPath) { $broncoFound = $true }.",
+    "Add them to the pre-removal summary list (Passo 3, the 'Os seguintes arquivos serao removidos' block): if (Test-Path $logPath) { Write-Host '  - bronco_log.txt' }; if (Test-Path $iniPath) { Write-Host '  - bronco_imgui.ini' }.",
+    "Add removal logic in Passo 4 (after the bronco_ocr.dll removal block, before or after config/), each guarded by Test-Path and wrapped in try/catch that appends to $errors on failure, matching the existing per-file removal pattern: remove bronco_log.txt with Remove-Item -Force and print 'Removido: bronco_log.txt'; remove bronco_imgui.ini with Remove-Item -Force and print 'Removido: bronco_imgui.ini'.",
+    "Keep the existing error-collection and final result reporting (Passo 5) working with the new removals (they append to the same $errors array, so no change needed beyond the added blocks). Preserve the existing d3d11.dll ProductName ownership check unchanged.",
+    "Keep all messages ASCII-only and consistent with the existing script style (Write-Host '  Removido: ...' -ForegroundColor Green, Write-Error-Message on failure)."
+  ],
+  "acceptance_criteria": [
+    "scripts/uninstall.ps1 defines $logPath and $iniPath pointing at bronco_log.txt and bronco_imgui.ini in the GW2 folder.",
+    "The $broncoFound detection is true when only bronco_log.txt or bronco_imgui.ini remain.",
+    "The pre-removal summary lists bronco_log.txt and bronco_imgui.ini when present.",
+    "Passo 4 removes bronco_log.txt and bronco_imgui.ini (each Test-Path guarded, Remove-Item -Force, try/catch appending to $errors), printing a green 'Removido:' line on success.",
+    "Existing removals (d3d11.dll with ProductName check, bronco_ocr.dll, config/, data/) remain unchanged and functional."
+  ],
+  "verification": [
+    "Static review of scripts/uninstall.ps1: confirm the two new path variables, detection additions, summary additions, and removal blocks are present and syntactically valid PowerShell (balanced braces, correct Join-Path/Test-Path/Remove-Item usage).",
+    "If PowerShell (pwsh) is available in the sandbox, run a syntax parse: pwsh -NoProfile -Command \"[System.Management.Automation.Language.Parser]::ParseFile('scripts/uninstall.ps1',[ref]$null,[ref]$null) > $null\" and confirm no parse errors. If pwsh is not available, rely on static review.",
+    "Static review: confirm the new removal blocks follow the same try/catch + $errors pattern so failures are reported in Passo 5."
+  ],
+  "blocked_reason": null,
+  "findings": "Edited scripts/uninstall.ps1 to also remove the two runtime-generated files. Changes: (1) Passo 2 defines $logPath = Join-Path $gw2Path 'bronco_log.txt' and $iniPath = Join-Path $gw2Path 'bronco_imgui.ini' next to the existing path vars. (2) $broncoFound detection now also sets true if either $logPath or $iniPath exists. (3) Passo 3 pre-removal summary prints '  - bronco_log.txt' and '  - bronco_imgui.ini' when present (Test-Path guarded). (4) Passo 4 adds two removal blocks after the bronco_ocr.dll block, each Test-Path guarded, Remove-Item -Force, wrapped in try/catch appending to $errors, printing green 'Removido: ...' on success and Write-Error-Message on failure. Existing d3d11.dll ProductName ownership check, bronco_ocr.dll, config/, and data/ removals left unchanged; Passo 5 result reporting already reads $errors so no change needed. Verification: pwsh (PowerShell Core) is NOT installed in this Linux sandbox, so a parse-only syntax check could not be run; verified by static review - balanced braces, correct Join-Path/Test-Path/Remove-Item usage, matches existing per-file pattern, ASCII-only messages. No C++ build attempted (Windows-only, out of scope for FEAT-003)."
+}

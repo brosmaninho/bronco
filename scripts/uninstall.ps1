@@ -179,12 +179,16 @@ $dllPath = Join-Path $gw2Path "d3d11.dll"
 $ocrDllPath = Join-Path $gw2Path "bronco_ocr.dll"
 $configPath = Join-Path $gw2Path "config"
 $dataPath = Join-Path $gw2Path "data"
+$logPath = Join-Path $gw2Path "bronco_log.txt"
+$iniPath = Join-Path $gw2Path "bronco_imgui.ini"
 
 $broncoFound = $false
 if (Test-Path $dllPath) { $broncoFound = $true }
 if (Test-Path $ocrDllPath) { $broncoFound = $true }
 if (Test-Path $configPath) { $broncoFound = $true }
 if (Test-Path $dataPath) { $broncoFound = $true }
+if (Test-Path $logPath) { $broncoFound = $true }
+if (Test-Path $iniPath) { $broncoFound = $true }
 
 if (-not $broncoFound) {
     Write-Warning-Message "Nenhum arquivo do Bronco encontrado em: $gw2Path"
@@ -206,6 +210,8 @@ if (Test-Path $dllPath) { Write-Host "  - d3d11.dll" }
 if (Test-Path $ocrDllPath) { Write-Host "  - bronco_ocr.dll" }
 if (Test-Path $configPath) { Write-Host "  - config/ (pasta completa)" }
 if (Test-Path $dataPath) { Write-Host "  - data/ (pasta completa)" }
+if (Test-Path $logPath) { Write-Host "  - bronco_log.txt" }
+if (Test-Path $iniPath) { Write-Host "  - bronco_imgui.ini" }
 Write-Host ""
 
 $finalConfirm = Read-Host "Confirma a remocao? Esta acao nao pode ser desfeita. (S/N)"
@@ -277,6 +283,30 @@ if (Test-Path $ocrDllPath) {
     catch {
         $errors += "bronco_ocr.dll: $($_.Exception.Message)"
         Write-Error-Message "Falha ao remover bronco_ocr.dll: $($_.Exception.Message)"
+    }
+}
+
+# Remover bronco_log.txt (arquivo gerado em runtime)
+if (Test-Path $logPath) {
+    try {
+        Remove-Item -Path $logPath -Force
+        Write-Host "  Removido: bronco_log.txt" -ForegroundColor Green
+    }
+    catch {
+        $errors += "bronco_log.txt: $($_.Exception.Message)"
+        Write-Error-Message "Falha ao remover bronco_log.txt: $($_.Exception.Message)"
+    }
+}
+
+# Remover bronco_imgui.ini (arquivo gerado em runtime)
+if (Test-Path $iniPath) {
+    try {
+        Remove-Item -Path $iniPath -Force
+        Write-Host "  Removido: bronco_imgui.ini" -ForegroundColor Green
+    }
+    catch {
+        $errors += "bronco_imgui.ini: $($_.Exception.Message)"
+        Write-Error-Message "Falha ao remover bronco_imgui.ini: $($_.Exception.Message)"
     }
 }
 
