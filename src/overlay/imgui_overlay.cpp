@@ -10,6 +10,7 @@
 #include <mutex>
 #include <atomic>
 #include <string>
+#include <unordered_set>
 
 // Forward declare the ImGui Win32 message handler
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -23,7 +24,7 @@ namespace {
 
     // Snapshot of whether the overlay is currently "unlocked" for mouse
     // interaction. The overlay is 100% passive by default and only captures the
-    // mouse while the drag modifier (Right ALT or Right Ctrl) is held AND the
+    // mouse while the drag modifier (Right CTRL) is held AND the
     // overlay is visible. This
     // atomic is written once per frame from render() (on the render thread) and
     // read from hookedWndProc (on the window thread), giving the WndProc a
@@ -34,14 +35,14 @@ namespace {
     std::atomic<bool> g_captureMouse{false};
 
     /// Returns true when the drag modifier is currently held down. The drag
-    /// modifier is the RIGHT ALT (VK_RMENU) OR the RIGHT CTRL (VK_RCONTROL)
-    /// key; both are side-specific virtual keys so the left ALT/Ctrl (commonly
-    /// used by the game itself) do not trigger panel dragging. The high bit of
-    /// GetKeyState indicates the key is pressed. This is the single source of
-    /// truth for the "unlock" gesture used by both render() and hookedWndProc.
+    /// modifier is the RIGHT CTRL (VK_RCONTROL) key only; it is a side-specific
+    /// virtual key so the left Ctrl (commonly used by the game itself) does not
+    /// trigger panel dragging. The high bit of GetKeyState indicates the key is
+    /// pressed. This is the single source of truth for the "unlock" gesture used
+    /// by both render() and hookedWndProc.
     bool isDragModifierHeld()
     {
-        return ((GetKeyState(VK_RMENU) & 0x8000) != 0) || ((GetKeyState(VK_RCONTROL) & 0x8000) != 0);
+        return (GetKeyState(VK_RCONTROL) & 0x8000) != 0;
     }
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
@@ -128,7 +129,7 @@ namespace {
             msg == WM_NCRBUTTONDOWN;
 
         // The overlay is "unlocked" only while it is visible AND the user is
-        // holding the drag modifier (Right ALT or Right Ctrl). This is the
+        // holding the drag modifier (Right CTRL). This is the
         // single gate that decides whether we are allowed to capture the mouse
         // for the draggable panel. When it is false the overlay is 100% passive
         // and NEVER consumes a mouse message, so the game always keeps full
@@ -165,9 +166,10 @@ namespace {
         }
 
         // Every non-captured message (all keyboard except the consumed toggle
-        // hotkey, and ALL mouse messages whenever ALT is not held) reaches the
-        // game here. When ALT is not held there is no path that returns 0 for a
-        // mouse message, so the game never loses mouse control.
+        // hotkey, and ALL mouse messages whenever the drag modifier is not held)
+        // reaches the game here. When the drag modifier (Right CTRL) is not held
+        // there is no path that returns 0 for a mouse message, so the game never
+        // loses mouse control.
         return CallWindowProcW(g_originalWndProc, hWnd, msg, wParam, lParam);
     }
 
@@ -278,7 +280,7 @@ void render(IDXGISwapChain* swapChain)
     ImGuiIO& io = ImGui::GetIO();
 
     // The panel is passive by default: it is only movable / interactive while
-    // the user holds the drag modifier (Right ALT or Right Ctrl) ("unlocked").
+    // the user holds the drag modifier (Right CTRL) ("unlocked").
     // This is read once here and used both to choose the window flags below and
     // to update the per-frame capture snapshot after the window is built, so it
     // must be declared in the function scope (not inside the window block).
@@ -321,35 +323,43 @@ void render(IDXGISwapChain* swapChain)
 
             // Persistent hint so the user always knows how to move the panel.
             ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                "Segure ALT Direito ou Ctrl Direito para mover o painel. F8 liga/desliga.");
+                "Segure Ctrl Direito para mover o painel. F8 liga/desliga.");
             ImGui::Separator();
 
-            std::lock_guard<std::mutex> lock(g_translationMutex);
+            // Build a clean, matched-only view of the current translations.
+            // Under the lock we collect only dictionary matches (entry.matched),
+            // skip empty translated strings, de-duplicate identical translations
+            // so repeated OCR frames do not stack the same line, and cap the
+            // list at 8 entries. Raw / unmatched OCR text is NEVER rendered on
+            // screen; unmatched lines remain available for diagnosis in the log
+            // (pipeline.cpp logs every OCR line).
+            std::vector<std::string> matchedLines;
+            {
+                std::lock_guard<std::mutex> lock(g_translationMutex);
 
-            if (g_translations.empty())
+                std::unordered_set<std::string> seen;
+                for (const auto& entry : g_translations)
+                {
+                    if (!entry.matched) continue;
+                    if (entry.translated.empty()) continue;
+                    if (!seen.insert(entry.translated).second) continue;
+                    matchedLines.push_back(entry.translated);
+                    if (matchedLines.size() >= 8) break;
+                }
+            }
+
+            if (matchedLines.empty())
             {
                 ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                     "Aguardando texto para traduzir...");
             }
             else
             {
-                for (const auto& entry : g_translations)
+                for (const auto& translated : matchedLines)
                 {
-                    if (entry.matched)
-                    {
-                        // Dictionary match: show the translation prominently in
-                        // the default bright text color.
-                        ImGui::TextWrapped("%s", entry.translated.c_str());
-                    }
-                    else
-                    {
-                        // Unmatched line: show the raw recognized OCR text in a
-                        // dimmer gray so the user can see OCR is working even
-                        // when there is no dictionary entry for the line.
-                        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
-                        ImGui::TextWrapped("%s", entry.original.c_str());
-                        ImGui::PopStyleColor();
-                    }
+                    // Dictionary match: show the translation prominently in the
+                    // default bright text color.
+                    ImGui::TextWrapped("%s", translated.c_str());
                 }
             }
         }
@@ -358,7 +368,7 @@ void render(IDXGISwapChain* swapChain)
 
     // Snapshot the "unlocked" state for this frame so hookedWndProc (running on
     // the window thread) reads a stable value. The panel is only unlocked for
-    // mouse capture while the drag modifier (Right ALT or Right Ctrl) is held;
+    // mouse capture while the drag modifier (Right CTRL) is held;
     // otherwise the overlay is fully passive and hookedWndProc will never
     // consume a mouse message. The WndProc also re-checks the modifier live, so
     // releasing it is honored immediately even before the next frame updates

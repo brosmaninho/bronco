@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "fix",
+  "description": "Clean overlay (show ONLY matched translations, de-duplicated and capped, no raw-OCR noise on screen) and change the drag modifier to RIGHT CTRL ONLY with exact new hint text. Touches d3d11.dll (src/overlay/imgui_overlay.cpp). Independent of FEAT-001 (which touches bronco_ocr.dll).",
+  "status": "completed",
+  "steps": [
+    "In src/overlay/imgui_overlay.cpp isDragModifierHeld(): change the body to return RIGHT CTRL ONLY: return (GetKeyState(VK_RCONTROL) & 0x8000) != 0;  Update the function's doc comment to say the drag modifier is the RIGHT CTRL (VK_RCONTROL) key only. Remove all VK_RMENU / 'Right ALT' references from this function.",
+    "In src/overlay/imgui_overlay.cpp render(): keep 'const bool dragModifierHeld = isDragModifierHeld();' at FUNCTION scope (before the window block) exactly as now, since it is used both for windowFlags and for g_captureMouse.store(dragModifierHeld) after the window block. Do NOT move it into the block (a prior build broke with C2065 on a block-scoped variable used outside its block).",
+    "In src/overlay/imgui_overlay.cpp render(): update the persistent hint TextColored string to EXACTLY: \"Segure Ctrl Direito para mover o painel. F8 liga/desliga.\" (remove the 'ALT Direito ou' wording).",
+    "In src/overlay/imgui_overlay.cpp render(): rewrite the g_translations display block so it renders ONLY matched translations. Under the g_translationMutex lock, build a local de-duplicated, capped list: iterate g_translations, skip entries where !entry.matched, skip empty entry.translated, de-duplicate identical translated strings (e.g. track seen strings in a std::unordered_set<std::string> or a small std::vector with std::find), and stop after 8 accepted lines (max cap). If the resulting list is empty, show TextColored gray 'Aguardando texto para traduzir...'. Otherwise TextWrapped each translated string in the default bright color. Do NOT render entry.original / unmatched raw OCR text anywhere on screen. Add necessary include(s) for the container used (e.g. <unordered_set>).",
+    "Confirm unmatched raw OCR lines are still available for diagnosis in the LOG: src/pipeline/pipeline.cpp already logs every OCR line via bronco::log::info (matched -> 'translation found', unmatched -> 'no dictionary match'). Do NOT remove that logging. No new logging needed in the overlay; the pipeline is the chosen single place for unmatched-line logging.",
+    "Keep the title bar ('Bronco - Tradutor##BroncoWindow'), the first-5-seconds welcome message ('Overlay ativo! Pressione F8 para toggle.'), and all D3D11 state save/restore logic unchanged.",
+    "Update the two block comments in render() and hookedWndProc that mention 'Right ALT or Right Ctrl' / 'when ALT is not held' to reflect RIGHT CTRL ONLY, so comments do not contradict the code. This is comment-only wording cleanup; do not change the mouse-capture logic itself (it already keys off isDragModifierHeld()/g_captureMouse).",
+    "Re-read render(), isDragModifierHeld(), and hookedWndProc() end-to-end: confirm dragModifierHeld is function-scoped, every identifier is in scope, the new container include is present, the exact hint string matches, braces balance, and no unmatched raw text path remains in the render output."
+  ],
+  "acceptance_criteria": [
+    "isDragModifierHeld() returns exactly (GetKeyState(VK_RCONTROL) & 0x8000) != 0 with no VK_RMENU reference.",
+    "The on-screen hint text is exactly 'Segure Ctrl Direito para mover o painel. F8 liga/desliga.'",
+    "render() displays only matched translations, de-duplicated, capped at 8 lines; unmatched/raw OCR text is never drawn on screen.",
+    "When there are no matched translations this frame, the panel shows 'Aguardando texto para traduzir...' and never raw OCR noise.",
+    "dragModifierHeld remains declared at function scope in render(); pipeline.cpp still logs every OCR line (matched and unmatched).",
+    "Title bar, welcome message, and D3D11 state save/restore are preserved."
+  ],
+  "verification": [
+    "Cannot build on this Linux sandbox (Windows MSVC/vcpkg). Verify by reading imgui_overlay.cpp: isDragModifierHeld body, exact hint string, matched-only+de-duped+capped render loop with the container include present, dragModifierHeld at function scope, and confirm no code path renders entry.original.",
+    "Grep imgui_overlay.cpp for VK_RMENU and 'ALT Direito' and confirm zero remaining occurrences in code and hint text."
+  ],
+  "blocked_reason": null,
+  "findings": "Edited only src/overlay/imgui_overlay.cpp. (A) isDragModifierHeld() now returns exactly (GetKeyState(VK_RCONTROL) & 0x8000) != 0; VK_RMENU removed; doc comment updated to RIGHT CTRL only. (B) Hint text replaced with exact 'Segure Ctrl Direito para mover o painel. F8 liga/desliga.'. (C) Rewrote the g_translations display block: under the g_translationMutex lock it builds a local std::vector<std::string> matchedLines, skipping !entry.matched and empty entry.translated, de-duplicating via std::unordered_set<std::string> seen (using insert().second), capping at 8 (break when size >= 8). Empty list shows gray 'Aguardando texto para traduzir...'; otherwise ImGui::TextWrapped each translated line in default bright color. Removed the dim-gray PushStyleColor/PopStyleColor branch that rendered entry.original; no code path renders entry.original now. Added #include <unordered_set>. (E) dragModifierHeld kept at FUNCTION scope (declared before the window block, used by both windowFlags and g_captureMouse.store); title bar, 5s welcome message, and all D3D11 save/restore preserved. Updated the RIGHT-CTRL-only comment wording in render(), hookedWndProc, and the g_captureMouse/g_captureMouse-snapshot comments (comment-only; mouse-capture logic unchanged). Did NOT touch pipeline.cpp (still logs every OCR line). Grep of imgui_overlay.cpp confirms ZERO occurrences of VK_RMENU, 'ALT Direito', 'Right ALT', 'when ALT is not held', and entry.original. <vector>/<string> supplied by imgui_overlay.h. Not built/tested: Windows-only MSVC/vcpkg project, verified by careful reading (CI builds on tag push per orchestrator)."
+}
