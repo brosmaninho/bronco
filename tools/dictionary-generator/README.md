@@ -52,6 +52,19 @@ pip install -r tools/dictionary-generator/requirements.txt
 python3 tools/dictionary-generator/generate_dictionaries.py --install-model
 ```
 
+> **Nota (Python 3.9):** no Python 3.9 o `pip install -r requirements.txt`
+> falha, porque o `argostranslate` puxa o `spacy` mais recente, cujo build de
+> `thinc` exige Python >= 3.10. Solucao no Python 3.9: instale um `spacy`
+> compativel **antes**:
+>
+> ```bash
+> pip install "spacy<3.8"
+> pip install -r tools/dictionary-generator/requirements.txt
+> ```
+>
+> No **Python 3.10+** o `pip install -r requirements.txt` funciona
+> diretamente, sem esse passo extra.
+
 ## Uso
 
 ```bash
