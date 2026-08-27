@@ -1,6 +1,7 @@
 #include "imgui_overlay.h"
 #include "../config/config.h"
 #include "../log/logger.h"
+#include "../proxy/d3d11_proxy.h"
 
 #include <imgui.h>
 #include <imgui_impl_win32.h>
@@ -8,6 +9,7 @@
 
 #include <mutex>
 #include <atomic>
+#include <string>
 
 // Forward declare the ImGui Win32 message handler
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -33,6 +35,54 @@ namespace {
     // Timestamp of overlay initialization (for welcome message)
     ULONGLONG g_initTimestamp = 0;
 
+    // Persistent storage for the imgui.ini path. ImGui stores the char* pointer
+    // directly (it does NOT copy the string), so this must outlive the ImGui
+    // context. A function-local static string keeps the buffer alive for the
+    // lifetime of the process.
+    std::string& iniPathStorage()
+    {
+        static std::string s_iniPath;
+        return s_iniPath;
+    }
+
+    /// Resolve the path to "bronco_imgui.ini" next to our proxy DLL so the
+    /// window position persists between sessions. Returns an empty string if the
+    /// module path cannot be resolved (ImGui then falls back to the default).
+    std::string resolveIniPath()
+    {
+        std::wstring dir;
+        HMODULE ourModule = bronco::proxy::getOurModule();
+        if (ourModule)
+        {
+            wchar_t modulePath[MAX_PATH] = {};
+            DWORD len = GetModuleFileNameW(ourModule, modulePath, MAX_PATH);
+            if (len > 0 && len < MAX_PATH)
+            {
+                std::wstring full(modulePath, len);
+                auto pos = full.find_last_of(L'\\');
+                if (pos != std::wstring::npos)
+                {
+                    dir = full.substr(0, pos + 1);
+                }
+            }
+        }
+
+        std::wstring wide = dir + L"bronco_imgui.ini";
+
+        // Convert to UTF-8 for ImGui's char* API.
+        int needed = WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1,
+            nullptr, 0, nullptr, nullptr);
+        if (needed <= 0)
+        {
+            return std::string();
+        }
+
+        std::string result(static_cast<size_t>(needed - 1), '\0');
+        WideCharToMultiByte(CP_UTF8, 0, wide.c_str(), -1,
+            result.data(), needed, nullptr, nullptr);
+        return result;
+    }
+
     // Our window procedure that intercepts input for ImGui and handles hotkeys
     LRESULT WINAPI hookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -47,27 +97,31 @@ namespace {
             }
         }
 
-        // Only let ImGui process input when the overlay is visible AND ImGui
-        // actually wants to capture the input (e.g., mouse over an ImGui window).
-        // For a passive overlay that does not have interactive widgets, we should
-        // NOT consume mouse events - let them pass through to the game always.
-        // Only forward keyboard input to ImGui when visible.
+        // Forward messages to ImGui only while the overlay is visible so its
+        // window (title bar drag, etc.) can react to the mouse.
         if (g_visible.load() != 0)
         {
-            // Forward keyboard messages to ImGui but NEVER consume mouse messages.
-            // This ensures game camera rotation (right-click) and target selection
-            // (left-click) always work.
+            // Let ImGui update its internal input state for every message.
+            ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+
+            // Determine whether this is a mouse message.
             bool isMouseMessage = (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) ||
                                   msg == WM_NCMOUSEMOVE || msg == WM_NCLBUTTONDOWN ||
                                   msg == WM_NCRBUTTONDOWN;
 
-            if (!isMouseMessage)
+            // When the cursor is over the Bronco window, ImGui wants the mouse.
+            // Consume the message so it does NOT reach the game (prevents the
+            // camera from moving / target from being selected while dragging the
+            // panel). When ImGui does not want the mouse, fall through so the game
+            // gets normal camera/click behavior.
+            if (isMouseMessage && ImGui::GetCurrentContext() != nullptr &&
+                ImGui::GetIO().WantCaptureMouse)
             {
-                ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+                return 0;
             }
         }
 
-        // Always pass ALL messages (including mouse) to the game
+        // Pass the message (keyboard + non-captured mouse) to the game.
         return CallWindowProcW(g_originalWndProc, hWnd, msg, wParam, lParam);
     }
 
@@ -107,9 +161,23 @@ bool initialize(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context)
 
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-    // Disable ImGui mouse/keyboard capture so input always reaches the game
-    io.WantCaptureMouse = false;
-    io.WantCaptureKeyboard = false;
+
+    // Persist the window position/size in a bronco_imgui.ini next to our DLL.
+    // ImGui keeps the char* pointer without copying it, so the backing string
+    // must outlive the context (function-local static).
+    {
+        std::string& iniPath = iniPathStorage();
+        iniPath = resolveIniPath();
+        if (!iniPath.empty())
+        {
+            io.IniFilename = iniPath.c_str();
+            bronco::log::info(("overlay::initialize: imgui ini path = " + iniPath).c_str());
+        }
+        else
+        {
+            bronco::log::error("overlay::initialize: could not resolve ini path, using default");
+        }
+    }
 
     // Set dark style
     ImGui::StyleColorsDark();
@@ -155,86 +223,52 @@ void render(IDXGISwapChain* swapChain)
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // Ensure ImGui does not capture mouse/keyboard from the game
     ImGuiIO& io = ImGui::GetIO();
-    io.WantCaptureMouse = false;
-    io.WantCaptureKeyboard = false;
 
-    // --- Always draw "Bronco v0.3" indicator in top-right corner ---
+    // --- Draggable Bronco window ---
+    // A real ImGui window with a title bar so the user can drag it anywhere.
+    // It is semi-transparent and shows the active translations (or a waiting
+    // message when there are none). Position/size persist via imgui.ini.
     {
-        ImDrawList* drawList = ImGui::GetForegroundDrawList();
-        const char* indicator = "Bronco v0.3";
-        ImVec2 textSize = ImGui::CalcTextSize(indicator);
-        float padding = 6.0f;
-        float x = io.DisplaySize.x - textSize.x - padding - 10.0f;
-        float y = 10.0f;
+        // First-time placement only: default to the top-right corner. ImGui will
+        // override this with the saved position from bronco_imgui.ini if present.
+        ImGui::SetNextWindowSize(ImVec2(340.0f, 240.0f), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowPos(
+            ImVec2(io.DisplaySize.x - 360.0f, 20.0f), ImGuiCond_FirstUseEver);
 
-        // Semi-transparent green text
-        drawList->AddText(ImVec2(x, y), IM_COL32(0, 255, 0, 128), indicator);
-    }
+        // Semi-transparent background for this window only.
+        ImGui::SetNextWindowBgAlpha(0.65f);
 
-    // --- Welcome message for the first 5 seconds ---
-    {
-        ULONGLONG elapsed = GetTickCount64() - g_initTimestamp;
-        if (elapsed < 5000)
+        // Draggable window: NO NoInputs / NoMove flags, so the title bar can be
+        // grabbed with the mouse.
+        if (ImGui::Begin("Bronco - Tradutor##BroncoWindow", nullptr,
+            ImGuiWindowFlags_NoCollapse))
         {
-            ImDrawList* drawList = ImGui::GetForegroundDrawList();
-            const char* welcomeMsg = "[Bronco] Overlay ativo! Pressione F8 para toggle.";
-            ImVec2 textSize = ImGui::CalcTextSize(welcomeMsg);
-            float x = (io.DisplaySize.x - textSize.x) * 0.5f;
-            float y = 40.0f;
-
-            // Dark background
-            drawList->AddRectFilled(
-                ImVec2(x - 8.0f, y - 4.0f),
-                ImVec2(x + textSize.x + 8.0f, y + textSize.y + 4.0f),
-                IM_COL32(20, 20, 20, 200),
-                4.0f);
-
-            // White text
-            drawList->AddText(ImVec2(x, y), IM_COL32(255, 255, 255, 255), welcomeMsg);
-        }
-    }
-
-    // --- Render translations ---
-    {
-        std::lock_guard<std::mutex> lock(g_translationMutex);
-
-        if (!g_translations.empty())
-        {
-            // Create a transparent fullscreen window for overlays
-            ImGui::SetNextWindowPos(ImVec2(0, 0));
-            ImGui::SetNextWindowSize(io.DisplaySize);
-            ImGui::Begin("##BroncoOverlay",
-                nullptr,
-                ImGuiWindowFlags_NoTitleBar |
-                ImGuiWindowFlags_NoResize |
-                ImGuiWindowFlags_NoMove |
-                ImGuiWindowFlags_NoScrollbar |
-                ImGuiWindowFlags_NoInputs |
-                ImGuiWindowFlags_NoBackground);
-
-            ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-            for (const auto& entry : g_translations)
+            // Welcome message for the first 5 seconds.
+            ULONGLONG elapsed = GetTickCount64() - g_initTimestamp;
+            if (elapsed < 5000)
             {
-                // Draw a semi-transparent background behind the translation
-                ImVec2 textPos(entry.x, entry.y);
-                ImVec2 textSize = ImGui::CalcTextSize(entry.translated.c_str());
-
-                drawList->AddRectFilled(
-                    ImVec2(textPos.x - 4, textPos.y - 2),
-                    ImVec2(textPos.x + textSize.x + 4, textPos.y + textSize.y + 2),
-                    IM_COL32(20, 20, 20, 200),
-                    3.0f);
-
-                // Draw the translated text
-                drawList->AddText(textPos, IM_COL32(255, 255, 255, 255),
-                    entry.translated.c_str());
+                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f),
+                    "Overlay ativo! Pressione F8 para toggle.");
+                ImGui::Separator();
             }
 
-            ImGui::End();
+            std::lock_guard<std::mutex> lock(g_translationMutex);
+
+            if (g_translations.empty())
+            {
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                    "Aguardando texto para traduzir...");
+            }
+            else
+            {
+                for (const auto& entry : g_translations)
+                {
+                    ImGui::TextWrapped("%s", entry.translated.c_str());
+                }
+            }
         }
+        ImGui::End();
     }
 
     // Render ImGui
