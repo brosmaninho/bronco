@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Add file-based logger module, Present hook fallbacks for AMD GPUs, GetAsyncKeyState hotkey, visual initialization indicator, always-on overlay indicator, and make OCR pipeline optional. All seven changes from the user requirements.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Create src/log/logger.h: Define namespace bronco::log with functions info(const char*), error(const char*), and an internal init() function. The logger writes to bronco_log.txt in the same directory as d3d11.dll (use bronco::proxy::getOurModule() to resolve path). Each line has a timestamp in [YYYY-MM-DD HH:MM:SS.mmm] format. Also call OutputDebugStringA for each message so existing DebugView works.",
     "2. Create src/log/logger.cpp: Implement the logger. Use a static std::ofstream opened on first call (lazy init, thread-safe via std::call_once). Get the DLL directory from bronco::proxy::getOurModule() + GetModuleFileNameW. Format timestamps with std::chrono::system_clock and localtime. Write [timestamp] [INFO] msg or [timestamp] [ERROR] msg. Flush after each write. Also call OutputDebugStringA.",
@@ -32,5 +32,5 @@
     "Confirm no remaining OutputDebugStringA calls in the files that were updated to use the logger"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "1. User reported mouse buttons not working (camera rotation, target selection broken). Root cause: hookedWndProc was passing mouse messages to ImGui_ImplWin32_WndProcHandler which consumed them. Fixed by never forwarding mouse messages to ImGui (passive overlay does not need interactive mouse input). 2. GetAsyncKeyState hotkey uses 0x8000 bitmask for high-order bit (currently pressed) with rising-edge debounce instead of the 0x1 approach (which has race conditions). 3. Pipeline worker thread failure is now non-fatal - overlay continues rendering without OCR. 4. Cannot build/test locally as this is a Windows-only DLL requiring MSVC + vcpkg; verification limited to code review and consistency checks."
 }
