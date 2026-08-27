@@ -239,8 +239,80 @@ void render(IDXGISwapChain* swapChain)
 
     // Render ImGui
     ImGui::Render();
+
+    // --- Save D3D11 pipeline state ---
+    // The game may have set custom blend, rasterizer, or depth stencil states
+    // that prevent our overlay from rendering. Save and restore around our draw.
+    ID3D11RenderTargetView* savedRTV = nullptr;
+    ID3D11DepthStencilView* savedDSV = nullptr;
+    g_context->OMGetRenderTargets(1, &savedRTV, &savedDSV);
+
+    D3D11_VIEWPORT savedViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    UINT numViewports = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
+    g_context->RSGetViewports(&numViewports, savedViewports);
+
+    ID3D11BlendState* savedBlendState = nullptr;
+    FLOAT savedBlendFactor[4] = {};
+    UINT savedSampleMask = 0;
+    g_context->OMGetBlendState(&savedBlendState, savedBlendFactor, &savedSampleMask);
+
+    ID3D11RasterizerState* savedRasterizerState = nullptr;
+    g_context->RSGetState(&savedRasterizerState);
+
+    ID3D11DepthStencilState* savedDepthStencilState = nullptr;
+    UINT savedStencilRef = 0;
+    g_context->OMGetDepthStencilState(&savedDepthStencilState, &savedStencilRef);
+
+    // --- Set up state for ImGui rendering ---
+    // Set our render target (no depth stencil - overlay is always on top)
     g_context->OMSetRenderTargets(1, &g_renderTargetView, nullptr);
+
+    // Set viewport matching the backbuffer dimensions (REQUIRED for DX11 to render)
+    D3D11_VIEWPORT vp = {};
+    vp.Width = io.DisplaySize.x;
+    vp.Height = io.DisplaySize.y;
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0.0f;
+    vp.TopLeftY = 0.0f;
+    g_context->RSSetViewports(1, &vp);
+
+    // Clear blend state so our alpha blending works correctly
+    g_context->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+
+    // Clear rasterizer state (no culling, no scissor override from game)
+    g_context->RSSetState(nullptr);
+
+    // Clear depth stencil state (we do not use depth testing)
+    g_context->OMSetDepthStencilState(nullptr, 0);
+
+    // Draw ImGui
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    // Log first successful render frame
+    {
+        static bool firstRenderLogged = false;
+        if (!firstRenderLogged)
+        {
+            bronco::log::info("overlay::render: first successful render frame");
+            firstRenderLogged = true;
+        }
+    }
+
+    // --- Restore D3D11 pipeline state ---
+    g_context->OMSetRenderTargets(1, &savedRTV, savedDSV);
+    if (numViewports > 0)
+        g_context->RSSetViewports(numViewports, savedViewports);
+    g_context->OMSetBlendState(savedBlendState, savedBlendFactor, savedSampleMask);
+    g_context->RSSetState(savedRasterizerState);
+    g_context->OMSetDepthStencilState(savedDepthStencilState, savedStencilRef);
+
+    // Release COM references from Get* calls
+    if (savedRTV) savedRTV->Release();
+    if (savedDSV) savedDSV->Release();
+    if (savedBlendState) savedBlendState->Release();
+    if (savedRasterizerState) savedRasterizerState->Release();
+    if (savedDepthStencilState) savedDepthStencilState->Release();
 }
 
 void shutdown()
