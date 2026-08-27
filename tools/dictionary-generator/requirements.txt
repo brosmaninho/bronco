@@ -1,0 +1,16 @@
+# Dependencias do gerador de dicionarios PT-BR do Bronco.
+#
+# requests  -> cliente HTTP para a API REST oficial do GW2.
+# tqdm      -> barra de progresso nos lotes/traducoes.
+# argostranslate -> traducao offline EN->PT-BR (Opcao C: gratis, sem chave, sem limites).
+#
+# ATENCAO: argostranslate puxa dependencias transitivas pesadas
+# (ctranslate2, sentencepiece, stanza, torch/numpy conforme a versao) e, em
+# tempo de execucao, baixa um modelo de idioma en->pt de ~100MB+ via
+# --install-model. Reserve espaco em disco e alguns minutos na primeira
+# instalacao. A camada de busca (gw2_api.py) NAO depende do argostranslate:
+# --dry-run e --no-translate funcionam sem ele instalado.
+
+requests>=2.28,<3
+tqdm>=4.64,<5
+argostranslate>=1.9,<2

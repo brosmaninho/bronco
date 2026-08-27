@@ -1,0 +1,25 @@
+{
+  "project_type": "Python tooling (offline dictionary generator) living inside a C++20 Windows DLL project (Bronco - GW2 translation overlay). The tool itself is standalone Python and does NOT go through the C++/MSVC build or CI.",
+  "language": "Python 3.9+ (tool). Host codebase is C++20 (not modified by this task).",
+  "build_system": "No build for the Python tool. It is a manual, maintainer-run script. The C++ project uses CMake+vcpkg+MSVC but is untouched here.",
+  "test_framework": "None exists in repo. Tool should ship a lightweight self-check/dry-run mode plus optional pytest-free assertions runnable with plain python3.",
+  "build_command": "N/A for the Python tool (no compilation).",
+  "test_command": "python3 -m py_compile tools/dictionary-generator/*.py  (syntax check). Functional smoke test via the generator's --dry-run / offline unit checks documented in the tool README.",
+  "verification_instructions": "1) Syntax-check all Python files with python3 -m py_compile. 2) Run the generator's built-in offline unit checks (format builder, cache round-trip, batching) which do NOT require network or Argos. 3) Run a small live API fetch (e.g. --category skills --limit 50) to confirm API+cache work. 4) Validate that generated JSON matches the C++ loader schema (top-level locale/category/version/entries array of {en, translated}). 5) Confirm generated JSON loads via json.load and every entry has non-empty 'en' and 'translated' string keys.",
+  "snapshot_or_generated_files": "The tool WRITES data/dictionaries/pt-br/{skills,items,traits}.json. These are checked-in dictionary outputs. Raw EN API data is cached under tools/dictionary-generator/cache/ (gitignored). Command to regenerate: python3 tools/dictionary-generator/generate_dictionaries.py --category all",
+  "setup_instructions": "python3 -m venv .venv && source .venv/bin/activate && pip install -r tools/dictionary-generator/requirements.txt && python3 -c 'import argostranslate.package, argostranslate.translate' && python3 tools/dictionary-generator/generate_dictionaries.py --install-model",
+  "environment_constraints": "Sandbox network access is AVAILABLE (verified: api.guildwars2.com responds, pip can reach PyPI). Python 3.9.25 and pip 26 present. Argos Translate wheel downloads OK. Full Argos install pulls heavy deps (ctranslate2, sentencepiece, stanza) plus a ~100MB+ en->pt model download; a full items run touches ~90k ids and is long-running, so a FULL run is NOT required here. The tool must degrade gracefully: fetching (API) must work independently of translation (Argos) so a live sample of English data and JSON structure can be produced even if the model is not installed. C++ project is Windows-only and is NOT built or modified in this task.",
+  "contribution_requirements": "README/docs in Brazilian Portuguese to match the repo. Keep generated JSON schema byte-compatible with src/translation/dictionary.cpp (case-insensitive lookup on 'en', value from 'translated'). Do not break existing pt-br dictionaries' format. Do not add the tool to CI. Add cache/model dirs to .gitignore.",
+  "key_patterns": "C++ loader (src/translation/dictionary.cpp) reads json['entries'] array, each item must have 'en' and 'translated' string fields; lookup is case-insensitive (lowercased). Existing dicts have top-level keys: locale, category, version, entries. GW2 API: GET /v2/<endpoint> returns full id list; GET /v2/<endpoint>?ids=a,b,c&lang=en returns up to 200 objects with name/description. Rate limit ~300 req/min so throttle. /v2/skills, /v2/items, /v2/traits, /v2/specializations, /v2/professions, /v2/pets, /v2/masteries.",
+  "relevant_files": [
+    "data/dictionaries/pt-br/skills.json",
+    "data/dictionaries/pt-br/items.json",
+    "data/dictionaries/pt-br/npc_dialogues.json",
+    "src/translation/dictionary.cpp",
+    "src/translation/dictionary.h",
+    ".gitignore",
+    "README.md",
+    "docs/ADDING_LANGUAGES.md"
+  ],
+  "directory_structure": "New tool goes in tools/dictionary-generator/ (script(s) + requirements.txt + README.md). Outputs to existing data/dictionaries/pt-br/. Raw API cache + Argos model cache under tools/dictionary-generator/cache/ (gitignored)."
+}

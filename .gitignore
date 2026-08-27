@@ -59,3 +59,6 @@ data/tessdata/
 
 # User-specific config overrides
 config/bronco_config.local.json
+
+# Dictionary generator cache (raw GW2 API data, translation cache, Argos model)
+tools/dictionary-generator/cache/
