@@ -18,8 +18,12 @@
 /// stops writing when it reaches this cap so the caller-allocated array is never
 /// overflowed. One OCR region can produce many recognized lines, so this is much
 /// larger than the region count. A full reconstructed skill tooltip emits a
-/// name header, type, description, notes, and one line per fact, so this cap is
-/// raised well above the old value to fit a complete multi-line tooltip.
+/// name header, type, description, notes, and one line per fact. A matched
+/// skill may also be part of a GW2 skill chain, in which case the ENTIRE chain
+/// is emitted as MULTIPLE stacked tooltips (each member contributes its own
+/// name/type/description/notes/facts lines, in chain order). This cap is sized
+/// to fit a realistic 2-3 skill chain; a longer chain simply truncates safely
+/// at the cap (bronco_ocr_process_frame stops writing once it is reached).
 #define BRONCO_OCR_MAX_RESULTS 96
 
 #ifdef __cplusplus

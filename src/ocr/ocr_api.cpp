@@ -229,23 +229,38 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
                     // First, try to reconstruct a FULL skill tooltip from the
                     // skilldata dataset using the raw OCR line (exact-then
                     // word-boundary-contains match on the English skill name).
-                    auto tooltip = handle->translator.skillTooltips().lookup(line);
-                    if (tooltip.has_value())
+                    // A matched skill may be part of a GW2 skill chain (e.g.
+                    // Sword of Wrath -> Sword Arc -> Sword Wave); in that case
+                    // the ENTIRE chain's tooltips are returned in order so the
+                    // overlay shows the full stacked sequence. A non-chain skill
+                    // yields a single-element chain, so behavior is unchanged for
+                    // standalone skills. An empty vector means no name matched.
+                    auto chain = handle->translator.skillTooltips().lookupChain(line);
+                    if (!chain.empty())
                     {
-                        const auto& tip = tooltip.value();
-                        // Name header (kind 1), then type (kind 2), then
-                        // description (kind 3), then notes (kind 4), then each
+                        // Emit each chain member's tooltip in order. For each
+                        // member: name header (kind 1), type (kind 2),
+                        // description (kind 3), notes (kind 4), then each
                         // formatted fact line (kind 5) - all matched=1, all
-                        // sharing this OCR result's region geometry.
-                        emitLine(tip.nameTranslated, 1, 1);
-                        if (!tip.typeTranslated.empty())
-                            emitLine(tip.typeTranslated, 1, 2);
-                        if (!tip.descriptionTranslated.empty())
-                            emitLine(tip.descriptionTranslated, 1, 3);
-                        for (const auto& note : tip.notes)
-                            emitLine(note, 1, 4);
-                        for (const auto& factLine : tip.factLines)
-                            emitLine(factLine, 1, 5);
+                        // sharing this OCR result's region geometry. The kind-1
+                        // name header renders a Separator in the overlay, which
+                        // visually separates stacked chain members. Every
+                        // emitLine is cap-guarded (returns false at
+                        // BRONCO_OCR_MAX_RESULTS), so a long chain simply
+                        // truncates safely without overflowing the caller array
+                        // or dangling resultStorage pointers.
+                        for (const auto& tip : chain)
+                        {
+                            emitLine(tip.nameTranslated, 1, 1);
+                            if (!tip.typeTranslated.empty())
+                                emitLine(tip.typeTranslated, 1, 2);
+                            if (!tip.descriptionTranslated.empty())
+                                emitLine(tip.descriptionTranslated, 1, 3);
+                            for (const auto& note : tip.notes)
+                                emitLine(note, 1, 4);
+                            for (const auto& factLine : tip.factLines)
+                                emitLine(factLine, 1, 5);
+                        }
                     }
                     else
                     {

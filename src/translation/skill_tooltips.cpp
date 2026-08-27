@@ -3,6 +3,7 @@
 
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <unordered_set>
 
 namespace bronco::translation {
 
@@ -61,6 +62,24 @@ std::string numToStr(const nlohmann::json& value)
 bool hasNumber(const nlohmann::json& fact, const char* key)
 {
     return fact.contains(key) && fact[key].is_number();
+}
+
+/// Read an integer field defensively. Returns the parsed value when the key is
+/// present AND holds an integer (signed or unsigned); returns std::nullopt when
+/// the key is missing or not an integer. A MISSING key is meaningful here: for
+/// next_chain/prev_chain it means "not part of a chain" (the FEAT-001 dataset
+/// OMITS the keys for non-chain skills rather than setting them to null).
+std::optional<long long> jsonInt(const nlohmann::json& obj, const char* key)
+{
+    if (obj.contains(key))
+    {
+        const auto& v = obj[key];
+        if (v.is_number_integer() || v.is_number_unsigned())
+        {
+            return v.get<long long>();
+        }
+    }
+    return std::nullopt;
 }
 
 /// Build the label for a fact: prefer translated 'label', fall back to
@@ -344,6 +363,7 @@ bool SkillTooltipStore::loadFromFile(const std::filesystem::path& file)
             return false;
 
         m_tooltips.clear();
+        m_byId.clear();
 
         for (const auto& skill : json["skills"])
         {
@@ -358,6 +378,16 @@ bool SkillTooltipStore::loadFromFile(const std::filesystem::path& file)
             if (tip.nameTranslated.empty()) tip.nameTranslated = nameEn;
             tip.typeTranslated = jsonStr(skill, "type");
             tip.descriptionTranslated = jsonStr(skill, "description");
+
+            // Chain metadata (FEAT-001). All optional: on the old dataset none
+            // of these keys exist, so every skill parses as non-chain (id 0,
+            // no next/prev) and single-tooltip behavior is preserved.
+            if (auto id = jsonInt(skill, "id"))
+            {
+                tip.id = id.value();
+            }
+            tip.nextChain = jsonInt(skill, "next_chain");
+            tip.prevChain = jsonInt(skill, "prev_chain");
 
             buildNotes(skill, tip.notes);
 
@@ -378,6 +408,13 @@ bool SkillTooltipStore::loadFromFile(const std::filesystem::path& file)
             std::string key = Dictionary::normalize(nameEn);
             if (!key.empty())
             {
+                // Build the id-keyed index BEFORE moving into the name map, so
+                // both indexes hold an equivalent tooltip. Only skills with a
+                // real (nonzero) id join the id index used for chain walking.
+                if (tip.id != 0)
+                {
+                    m_byId[tip.id] = tip;
+                }
                 m_tooltips[key] = std::move(tip);
             }
         }
@@ -430,6 +467,70 @@ std::optional<SkillTooltip> SkillTooltipStore::lookup(const std::string& ocrLine
         return *best;
     }
     return std::nullopt;
+}
+
+std::vector<SkillTooltip> SkillTooltipStore::lookupChain(const std::string& ocrLine) const
+{
+    // Reuse the existing name matcher so chain lookups match names exactly the
+    // same way single lookups do.
+    auto matched = lookup(ocrLine);
+    if (!matched.has_value())
+    {
+        return {};
+    }
+
+    const SkillTooltip& tip = matched.value();
+
+    // Not part of a chain: no id to walk, or neither link present. Return the
+    // single matched tooltip, preserving the old single-tooltip behavior. This
+    // is also the OLD-dataset path (id == 0, no chain keys).
+    if (tip.id == 0 || (!tip.nextChain.has_value() && !tip.prevChain.has_value()))
+    {
+        return { tip };
+    }
+
+    // Cap the walk so a corrupt dataset (broken/cyclic links) can never loop
+    // forever or produce an unbounded result.
+    constexpr std::size_t kMaxChainLen = 16;
+
+    // Walk prev_chain backward to the head (the member with no prev_chain, or
+    // until an id is missing from the index), guarding against cycles. Mirrors
+    // reconstruct_chain in the Python generator.
+    long long headId = tip.id;
+    std::unordered_set<long long> seenBack{ headId };
+    for (std::size_t steps = 0; steps < kMaxChainLen; ++steps)
+    {
+        auto it = m_byId.find(headId);
+        if (it == m_byId.end()) break;
+        const auto& prev = it->second.prevChain;
+        if (!prev.has_value()) break;
+        long long prevId = prev.value();
+        if (m_byId.find(prevId) == m_byId.end()) break;
+        if (!seenBack.insert(prevId).second) break; // cycle guard
+        headId = prevId;
+    }
+
+    // Walk next_chain forward from the head, collecting each tooltip in order,
+    // guarding against cycles and the length cap.
+    std::vector<SkillTooltip> chain;
+    std::unordered_set<long long> seenFwd;
+    std::optional<long long> curId = headId;
+    while (curId.has_value() && chain.size() < kMaxChainLen)
+    {
+        auto it = m_byId.find(curId.value());
+        if (it == m_byId.end()) break;
+        if (!seenFwd.insert(curId.value()).second) break; // cycle guard
+        chain.push_back(it->second);
+        curId = it->second.nextChain;
+    }
+
+    // Defensive: if reconstruction somehow yielded nothing (should not happen
+    // because tip.id is in m_byId), fall back to the single matched tooltip.
+    if (chain.empty())
+    {
+        return { tip };
+    }
+    return chain;
 }
 
 std::size_t SkillTooltipStore::size() const

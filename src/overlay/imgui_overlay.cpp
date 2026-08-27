@@ -365,7 +365,14 @@ void render(IDXGISwapChain* swapChain)
                         std::to_string(entry.lineKind) + "\x1f" + entry.translated;
                     if (!seen.insert(dedupKey).second) continue;
                     displayLines.push_back(DisplayLine{ entry.lineKind, entry.translated });
-                    if (displayLines.size() >= 40) break;
+                    // Cap kept consistent with BRONCO_OCR_MAX_RESULTS (96): a
+                    // matched skill may be part of a chain and emit MULTIPLE
+                    // stacked tooltips (name+type+description+notes+several
+                    // facts per member), so a realistic 2-3 skill chain must not
+                    // be truncated. The (lineKind + text) de-dup above still
+                    // collapses repeated frames, so distinct chain members are
+                    // all shown while the panel stays bounded.
+                    if (displayLines.size() >= 96) break;
                 }
             }
 
