@@ -21,16 +21,25 @@ namespace {
     std::atomic<bool> g_initialized{false};
     std::atomic<int> g_visible{1}; // Use int for fetch_xor atomicity
 
-    // Snapshot of whether the mouse is currently over the Bronco ImGui window.
-    // This is written once per frame from render() (on the render thread, right
-    // after ImGui has finished its per-frame hover test) and read from
-    // hookedWndProc (on the window thread). Using an atomic gives the WndProc a
-    // stable, self-consistent value instead of reading ImGui's live
-    // io.WantCaptureMouse, which can be stale or reflect the wrong frame when
-    // observed from a different thread. When false, no mouse message is ever
-    // consumed, so the game returns to normal "game mode" as soon as the cursor
-    // leaves the panel.
-    std::atomic<bool> g_wantCaptureMouse{false};
+    // Snapshot of whether the overlay is currently "unlocked" for mouse
+    // interaction. The overlay is 100% passive by default and only captures the
+    // mouse while the ALT modifier is held AND the overlay is visible. This
+    // atomic is written once per frame from render() (on the render thread) and
+    // read from hookedWndProc (on the window thread), giving the WndProc a
+    // stable, self-consistent value. When false, no mouse message is EVER
+    // consumed, so the game always keeps full mouse control; the previous model
+    // (consume whenever the cursor was over the panel) still fought the game for
+    // the mouse, so it was replaced by this ALT-gated model.
+    std::atomic<bool> g_captureMouse{false};
+
+    /// Returns true when the ALT modifier key is currently held down. The high
+    /// bit of GetKeyState indicates the key is pressed. VK_MENU is the virtual
+    /// key for either ALT key. This is the single source of truth for the
+    /// "unlock" gesture used by both render() and hookedWndProc.
+    bool isAltHeld()
+    {
+        return (GetKeyState(VK_MENU) & 0x8000) != 0;
+    }
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
 
@@ -108,36 +117,53 @@ namespace {
             }
         }
 
-        // Forward messages to ImGui only while the overlay is visible so its
-        // window (title bar drag, etc.) can react to the mouse.
-        if (g_visible.load() != 0)
+        // Determine whether this is a mouse message up front so every mouse
+        // code path can be reasoned about explicitly.
+        const bool isMouseMessage =
+            (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) ||
+            msg == WM_NCMOUSEMOVE || msg == WM_NCLBUTTONDOWN ||
+            msg == WM_NCRBUTTONDOWN;
+
+        // The overlay is "unlocked" only while it is visible AND the user is
+        // holding ALT. This is the single gate that decides whether we are
+        // allowed to capture the mouse for the draggable panel. When it is
+        // false the overlay is 100% passive and NEVER consumes a mouse message,
+        // so the game always keeps full mouse control (this is the whole point
+        // of the fix). We read the per-frame atomic snapshot from render() and
+        // also re-check ALT live here so a release of ALT is honored instantly.
+        const bool unlocked =
+            (g_visible.load() != 0) && g_captureMouse.load() && isAltHeld();
+
+        if (unlocked)
         {
-            // Let ImGui update its internal input state for every message. We
-            // ALWAYS forward here (even when the cursor is not over the panel)
-            // so ImGui keeps tracking the mouse position and a drag begun on the
-            // title bar keeps working while the cursor moves.
+            // Unlocked: hand the message to ImGui so the panel can react to the
+            // mouse (title-bar drag, etc.) ...
             ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 
-            // Determine whether this is a mouse message.
-            bool isMouseMessage = (msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST) ||
-                                  msg == WM_NCMOUSEMOVE || msg == WM_NCLBUTTONDOWN ||
-                                  msg == WM_NCRBUTTONDOWN;
-
-            // Consume the mouse message ONLY when the cursor is actually over the
-            // Bronco panel, using the per-frame snapshot captured in render().
-            // Reading the atomic (instead of the live ImGui io.WantCaptureMouse)
-            // avoids the stale / cross-thread state that caused the regression:
-            // the mouse stayed in "navigation mode" and never returned to "game
-            // mode" even when the panel was not focused / not under the cursor.
-            // When the cursor is not over the panel, we fall through and the game
-            // receives normal camera-rotate / target-select input.
-            if (isMouseMessage && g_wantCaptureMouse.load())
+            // ... and consume mouse messages so the drag does not leak into the
+            // game camera. Non-mouse messages still fall through below.
+            if (isMouseMessage)
             {
                 return 0;
             }
         }
+        else if (isMouseMessage && g_visible.load() != 0)
+        {
+            // Locked but visible: keep ImGui's internal mouse position roughly
+            // current by forwarding WM_MOUSEMOVE only, but NEVER consume it. We
+            // deliberately do NOT return 0 for any mouse message here so control
+            // always falls through to CallWindowProcW below and the game keeps
+            // the mouse. Non-move mouse messages are left entirely untouched.
+            if (msg == WM_MOUSEMOVE)
+            {
+                ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
+            }
+        }
 
-        // Pass the message (keyboard + non-captured mouse) to the game.
+        // Every non-captured message (all keyboard except the consumed toggle
+        // hotkey, and ALL mouse messages whenever ALT is not held) reaches the
+        // game here. When ALT is not held there is no path that returns 0 for a
+        // mouse message, so the game never loses mouse control.
         return CallWindowProcW(g_originalWndProc, hWnd, msg, wParam, lParam);
     }
 
@@ -228,7 +254,7 @@ void render(IDXGISwapChain* swapChain)
     // while the overlay is hidden (the game must be in full "game mode").
     if (!g_visible.load())
     {
-        g_wantCaptureMouse.store(false);
+        g_captureMouse.store(false);
         return;
     }
 
@@ -261,10 +287,19 @@ void render(IDXGISwapChain* swapChain)
         // Semi-transparent background for this window only.
         ImGui::SetNextWindowBgAlpha(0.65f);
 
-        // Draggable window: NO NoInputs / NoMove flags, so the title bar can be
-        // grabbed with the mouse.
-        if (ImGui::Begin("Bronco - Tradutor##BroncoWindow", nullptr,
-            ImGuiWindowFlags_NoCollapse))
+        // The panel is passive by default: it is only movable / interactive
+        // while the user holds ALT ("unlocked"). When ALT is not held (locked)
+        // we add NoMove + NoInputs so the window cannot be dragged and swallows
+        // no mouse input, keeping the overlay 100% passive. When ALT is held we
+        // use the movable flags so the title bar can be dragged.
+        const bool altHeld = isAltHeld();
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
+        if (!altHeld)
+        {
+            windowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs;
+        }
+
+        if (ImGui::Begin("Bronco - Tradutor##BroncoWindow", nullptr, windowFlags))
         {
             // Welcome message for the first 5 seconds.
             ULONGLONG elapsed = GetTickCount64() - g_initTimestamp;
@@ -274,6 +309,11 @@ void render(IDXGISwapChain* swapChain)
                     "Overlay ativo! Pressione F8 para toggle.");
                 ImGui::Separator();
             }
+
+            // Persistent hint so the user always knows how to move the panel.
+            ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                "Segure ALT para mover o painel. F8 liga/desliga.");
+            ImGui::Separator();
 
             std::lock_guard<std::mutex> lock(g_translationMutex);
 
@@ -293,14 +333,13 @@ void render(IDXGISwapChain* swapChain)
         ImGui::End();
     }
 
-    // Snapshot whether ImGui wants the mouse for this frame. This is read once
-    // here, on the render thread, right after the window was built and ImGui has
-    // finished its hover/active test. hookedWndProc (running on the window
-    // thread) reads this atomic instead of the live io.WantCaptureMouse so it
-    // gets a stable value that correctly tracks the cursor leaving the panel.
-    // io.WantCaptureMouse is true while the cursor is over the panel AND while a
-    // drag started on it is in progress, so title-bar dragging keeps working.
-    g_wantCaptureMouse.store(io.WantCaptureMouse);
+    // Snapshot the "unlocked" state for this frame so hookedWndProc (running on
+    // the window thread) reads a stable value. The panel is only unlocked for
+    // mouse capture while the ALT modifier is held; otherwise the overlay is
+    // fully passive and hookedWndProc will never consume a mouse message. The
+    // WndProc also re-checks ALT live, so releasing ALT is honored immediately
+    // even before the next frame updates this atomic.
+    g_captureMouse.store(altHeld);
 
     // Render ImGui
     ImGui::Render();
@@ -423,13 +462,18 @@ void toggleVisibility()
     // instead of waiting for the next render frame.
     if (previous != 0)
     {
-        g_wantCaptureMouse.store(false);
+        g_captureMouse.store(false);
     }
 }
 
 bool isVisible()
 {
     return g_visible.load() != 0;
+}
+
+HWND gameWindow()
+{
+    return g_hwnd;
 }
 
 } // namespace bronco::overlay

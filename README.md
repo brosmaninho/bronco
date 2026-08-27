@@ -175,6 +175,9 @@ Guild Wars 2/
 ## Uso
 
 - **F8** (padrao): Liga/desliga o overlay de traducao
+- **ALT**: O painel e passivo por padrao e nao intercepta o mouse. Segure ALT
+  para "destravar" o painel e arrasta-lo pela barra de titulo. Ao soltar ALT o
+  painel volta a ser passivo e o mouse funciona normalmente no jogo.
 - As traducoes aparecem automaticamente sobre tooltips e dialogos de NPC
 - Configuracoes podem ser ajustadas em `config/bronco_config.json`
 
@@ -192,12 +195,23 @@ O arquivo `config/bronco_config.json` permite ajustar:
 | `toggle_hotkey` | Virtual key code do hotkey | `119` (F8) |
 | `ocr_confidence_threshold` | Confianca minima do OCR (0-100) | `60.0` |
 | `ocr_interval_ms` | Intervalo entre leituras OCR (ms) | `500` |
-| `ocr_regions` | Regioes da tela para OCR | Tooltips + Dialogos |
+| `ocr_follow_mouse` | Segue o cursor para o OCR (modo padrao) | `true` |
+| `ocr_follow_width` | Largura da regiao ao redor do cursor (px) | `500` |
+| `ocr_follow_height` | Altura da regiao ao redor do cursor (px) | `400` |
+| `ocr_regions` | Regioes fixas da tela para OCR (fallback) | Tooltips + Dialogos |
 
 ### Regioes OCR
 
-As regioes sao configuradas para resolucao 1920x1080. Se voce usa outra resolucao,
-ajuste os valores `x`, `y`, `width` e `height` de cada regiao.
+Por padrao o Bronco usa o modo "seguir o mouse" (`ocr_follow_mouse: true`). Como os
+tooltips do Guild Wars 2 aparecem onde o cursor esta, a cada leitura o Bronco captura
+uma unica regiao centrada na posicao atual do mouse, com tamanho `ocr_follow_width` x
+`ocr_follow_height` (padrao 500x400). A regiao e ajustada automaticamente para caber
+dentro da tela capturada. Isso e muito mais eficaz que regioes fixas.
+
+Se preferir usar regioes fixas, defina `ocr_follow_mouse: false`. Nesse caso o Bronco
+usa a lista `ocr_regions` como fallback. As regioes fixas sao configuradas para
+resolucao 1920x1080; se voce usa outra resolucao, ajuste os valores `x`, `y`, `width` e
+`height` de cada regiao.
 
 ## Adicionando Novos Idiomas
 
