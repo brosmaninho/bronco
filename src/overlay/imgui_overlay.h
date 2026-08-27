@@ -17,6 +17,9 @@ struct TranslatedEntry {
     float width = 0.0f;
     float height = 0.0f;
     bool matched = false; // true = dictionary match (prominent), false = raw OCR line (dim)
+    int lineKind = 0;     // Structured tooltip hint (mirrors BroncoOcrResult.lineKind):
+                          // 0 = generic/legacy, 1 = name header, 2 = type,
+                          // 3 = description, 4 = note, 5 = fact.
 };
 
 /// Initialize Dear ImGui with DirectX 11 backend.

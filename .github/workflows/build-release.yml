@@ -66,6 +66,7 @@ jobs:
           # Create release directory structure
           New-Item -ItemType Directory -Force -Path "$releaseDir/config"
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/dictionaries"
+          New-Item -ItemType Directory -Force -Path "$releaseDir/data/skilldata"
           New-Item -ItemType Directory -Force -Path "$releaseDir/data/tessdata"
           New-Item -ItemType Directory -Force -Path "$releaseDir/scripts"
 
@@ -90,6 +91,9 @@ jobs:
 
           # Copy all dictionaries (all locales)
           Copy-Item "data/dictionaries/*" "$releaseDir/data/dictionaries/" -Recurse
+
+          # Copy skilldata (reconstructed full-tooltip dataset, all locales)
+          Copy-Item "data/skilldata/*" "$releaseDir/data/skilldata/" -Recurse
 
           # Copy tessdata
           Copy-Item "staging/data/tessdata/eng.traineddata" "$releaseDir/data/tessdata/"

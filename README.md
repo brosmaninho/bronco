@@ -189,6 +189,7 @@ O arquivo `config/bronco_config.json` permite ajustar:
 |-------|-----------|--------|
 | `target_locale` | Codigo do idioma alvo | `"pt-br"` |
 | `dictionary_path` | Caminho para dicionarios | `"data/dictionaries"` |
+| `skilldata_path` | Caminho para o dataset de tooltips completos de skills | `"data/skilldata"` |
 | `tessdata_path` | Caminho para dados do Tesseract | `"data/tessdata"` |
 | `cache_capacity` | Tamanho maximo do cache LRU | `5000` |
 | `font_size` | Tamanho da fonte do overlay | `16.0` |
@@ -212,6 +213,24 @@ Se preferir usar regioes fixas, defina `ocr_follow_mouse: false`. Nesse caso o B
 usa a lista `ocr_regions` como fallback. As regioes fixas sao configuradas para
 resolucao 1920x1080; se voce usa outra resolucao, ajuste os valores `x`, `y`, `width` e
 `height` de cada regiao.
+
+### Tooltip completo traduzido
+
+Quando o Bronco identifica uma skill pelo nome (via OCR), ele busca os dados
+estruturados completos dessa skill no dataset `skilldata_path`
+(`data/skilldata/<locale>/skills_tooltips.json`, gerado na instalacao a partir da API
+oficial do GW2) e reconstroi o tooltip COMPLETO traduzido para PT-BR, exibido de forma
+limpa e legivel no overlay:
+
+- **Nome** da skill (cabecalho destacado)
+- **Tipo** da skill
+- **Descricao** da skill (com quebra de linha automatica)
+- **Observacoes** sobre a skill / game mode
+- **Lista de efeitos** (facts) com seus valores e frequencias, em formato de lista
+
+O dataset `data/skilldata` e OPCIONAL: se estiver ausente, o Bronco ainda exibe a
+traducao apenas do nome da skill. O texto cru do OCR nao reconhecido nunca aparece no
+overlay (fica somente no log `bronco_log.txt`).
 
 ## Adicionando Novos Idiomas
 

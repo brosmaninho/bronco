@@ -340,6 +340,7 @@ void Pipeline::workerThread()
             entry.original = result.originalText ? result.originalText : "";
             entry.translated = result.translatedText ? result.translatedText : "";
             entry.matched = (result.matched != 0);
+            entry.lineKind = result.lineKind;
 
             // Diagnostic logging: report the recognized text and whether a
             // dictionary translation was found. We now key this off the

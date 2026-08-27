@@ -209,7 +209,12 @@ Write-Host ""
 if (Test-Path $dllPath) { Write-Host "  - d3d11.dll" }
 if (Test-Path $ocrDllPath) { Write-Host "  - bronco_ocr.dll" }
 if (Test-Path $configPath) { Write-Host "  - config/ (pasta completa)" }
-if (Test-Path $dataPath) { Write-Host "  - data/ (pasta completa)" }
+if (Test-Path $dataPath) {
+    Write-Host "  - data/ (pasta completa)"
+    if (Test-Path (Join-Path $dataPath "skilldata")) {
+        Write-Host "    - data/skilldata/ (dataset de tooltips completo)"
+    }
+}
 if (Test-Path $logPath) { Write-Host "  - bronco_log.txt" }
 if (Test-Path $iniPath) { Write-Host "  - bronco_imgui.ini" }
 Write-Host ""
@@ -345,13 +350,18 @@ if (Test-Path $dataPath) {
         # Verificar se tem subpastas do Bronco
         $dictPath = Join-Path $dataPath "dictionaries"
         $tessPath = Join-Path $dataPath "tessdata"
-        $hasBroncoData = (Test-Path $dictPath) -or (Test-Path $tessPath)
+        $skillDataPath = Join-Path $dataPath "skilldata"
+        $hasBroncoData = (Test-Path $dictPath) -or (Test-Path $tessPath) -or (Test-Path $skillDataPath)
 
         if ($hasBroncoData) {
             # Remover subpastas do Bronco
             if (Test-Path $dictPath) {
                 Remove-Item -Path $dictPath -Recurse -Force
                 Write-Host "  Removido: data/dictionaries/" -ForegroundColor Green
+            }
+            if (Test-Path $skillDataPath) {
+                Remove-Item -Path $skillDataPath -Recurse -Force
+                Write-Host "  Removido: data/skilldata/" -ForegroundColor Green
             }
             if (Test-Path $tessPath) {
                 Remove-Item -Path $tessPath -Recurse -Force

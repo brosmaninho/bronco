@@ -288,6 +288,19 @@ if (Test-Path $dictRoot) {
     }
 }
 
+# Soft check for the reconstructed skill-tooltip dataset (data\skilldata).
+# This is OPTIONAL: when present, the overlay reconstructs the full translated
+# tooltip (nome, tipo, descricao, observacoes e a lista de efeitos). When
+# absent, the name-only translation still works, so we do NOT hard-fail here.
+$skillDataRoot = Join-Path $scriptRoot "data\skilldata"
+$hasSkillData = $false
+if (Test-Path $skillDataRoot) {
+    $skillDataDirs = Get-ChildItem -Path $skillDataRoot -Directory
+    if ($skillDataDirs.Count -gt 0) {
+        $hasSkillData = $true
+    }
+}
+
 if ($missingFiles.Count -gt 0 -or -not $hasDictionaries) {
     Write-Error-Message "Arquivos necessarios nao encontrados. Verifique se voce extraiu o ZIP completo."
     Write-Host ""
@@ -302,6 +315,14 @@ if ($missingFiles.Count -gt 0 -or -not $hasDictionaries) {
     Read-Host "Pressione Enter para sair"
     exit 1
 }
+
+if ($hasSkillData) {
+    Write-Success "Dataset de tooltips completo encontrado (data\skilldata): tooltips traduzidos completos ativos."
+}
+else {
+    Write-Warning-Message "Dataset data\skilldata ausente: apenas traducao do nome sera exibida (tooltip completo desativado)."
+}
+Write-Host ""
 
 try {
     # Copiar d3d11.dll

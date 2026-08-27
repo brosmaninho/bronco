@@ -39,6 +39,10 @@ struct BroncoOcrResult {
     int regionWidth;
     int regionHeight;
     int matched;                  // 1 = dictionary match, 0 = raw OCR line (no translation)
+    int lineKind;                 // Structured tooltip hint for the overlay renderer:
+                                  // 0 = generic/legacy line (name-only match or raw OCR fallback),
+                                  // 1 = tooltip name header, 2 = tooltip type, 3 = tooltip description,
+                                  // 4 = tooltip note, 5 = tooltip fact (label: value).
 };
 
 /// Create a new OCR engine instance.

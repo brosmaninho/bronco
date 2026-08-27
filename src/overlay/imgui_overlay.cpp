@@ -326,14 +326,22 @@ void render(IDXGISwapChain* swapChain)
                 "Segure Ctrl Direito para mover o painel. F8 liga/desliga.");
             ImGui::Separator();
 
-            // Build a clean, matched-only view of the current translations.
-            // Under the lock we collect only dictionary matches (entry.matched),
-            // skip empty translated strings, de-duplicate identical translations
-            // so repeated OCR frames do not stack the same line, and cap the
-            // list at 8 entries. Raw / unmatched OCR text is NEVER rendered on
-            // screen; unmatched lines remain available for diagnosis in the log
+            // Build a clean, matched-only view of the current translations,
+            // preserving the ORDER the OCR DLL emitted them so a reconstructed
+            // skill tooltip renders as: name header -> type -> description ->
+            // notes -> fact list. Under the lock we collect only dictionary
+            // matches (entry.matched) with non-empty translated text,
+            // de-duplicate identical (lineKind, translated) pairs so repeated
+            // OCR frames do not stack the same content, and cap the number of
+            // rendered entries so a full tooltip fits but the panel cannot grow
+            // unbounded. Raw / unmatched OCR text is NEVER rendered on screen;
+            // unmatched lines remain available for diagnosis in the log
             // (pipeline.cpp logs every OCR line).
-            std::vector<std::string> matchedLines;
+            struct DisplayLine {
+                int kind;
+                std::string text;
+            };
+            std::vector<DisplayLine> displayLines;
             {
                 std::lock_guard<std::mutex> lock(g_translationMutex);
 
@@ -342,24 +350,57 @@ void render(IDXGISwapChain* swapChain)
                 {
                     if (!entry.matched) continue;
                     if (entry.translated.empty()) continue;
-                    if (!seen.insert(entry.translated).second) continue;
-                    matchedLines.push_back(entry.translated);
-                    if (matchedLines.size() >= 8) break;
+                    // De-dup on kind+text so an identical line at a different
+                    // kind is still allowed, but repeated frames collapse.
+                    std::string dedupKey =
+                        std::to_string(entry.lineKind) + "\x1f" + entry.translated;
+                    if (!seen.insert(dedupKey).second) continue;
+                    displayLines.push_back(DisplayLine{ entry.lineKind, entry.translated });
+                    if (displayLines.size() >= 40) break;
                 }
             }
 
-            if (matchedLines.empty())
+            if (displayLines.empty())
             {
                 ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                     "Aguardando texto para traduzir...");
             }
             else
             {
-                for (const auto& translated : matchedLines)
+                // Render each collected line according to its structured kind so
+                // the reconstructed tooltip is clean and legible.
+                for (const auto& line : displayLines)
                 {
-                    // Dictionary match: show the translation prominently in the
-                    // default bright text color.
-                    ImGui::TextWrapped("%s", translated.c_str());
+                    switch (line.kind)
+                    {
+                        case 1: // Name header: bright accent + separator.
+                            ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.4f, 1.0f),
+                                "%s", line.text.c_str());
+                            ImGui::Separator();
+                            break;
+                        case 2: // Type: cool accent color.
+                            ImGui::TextColored(ImVec4(0.7f, 0.8f, 1.0f, 1.0f),
+                                "%s", line.text.c_str());
+                            break;
+                        case 3: // Description: wrapped body text.
+                            ImGui::TextWrapped("%s", line.text.c_str());
+                            break;
+                        case 4: // Note / observation: dim, wrapped.
+                            ImGui::PushStyleColor(ImGuiCol_Text,
+                                ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+                            ImGui::TextWrapped("%s", line.text.c_str());
+                            ImGui::PopStyleColor();
+                            break;
+                        case 5: // Fact (label: value): bulleted list item.
+                            ImGui::Bullet();
+                            ImGui::SameLine();
+                            ImGui::TextWrapped("%s", line.text.c_str());
+                            break;
+                        case 0: // Legacy / name-only match: wrapped, as before.
+                        default:
+                            ImGui::TextWrapped("%s", line.text.c_str());
+                            break;
+                    }
                 }
             }
         }

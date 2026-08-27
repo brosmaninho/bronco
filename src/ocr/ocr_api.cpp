@@ -199,9 +199,12 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
                     // check on EVERY emitted line guarantees we never write past
                     // the caller-allocated array. Both original and translated
                     // point at the SAME stored display string for tooltip lines;
-                    // the overlay renders the translated (PT-BR) text.
+                    // the overlay renders the translated (PT-BR) text. lineKind
+                    // is a structured hint (0 legacy/raw, 1 name header, 2 type,
+                    // 3 description, 4 note, 5 fact) the overlay uses to style
+                    // each line without re-parsing.
                     auto emitLine =
-                        [&](const std::string& displayText, int matchedFlag) -> bool
+                        [&](const std::string& displayText, int matchedFlag, int lineKind) -> bool
                     {
                         if (count >= BRONCO_OCR_MAX_RESULTS) return false;
 
@@ -218,6 +221,7 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
                         outResults[count].regionWidth = ocr.region.width;
                         outResults[count].regionHeight = ocr.region.height;
                         outResults[count].matched = matchedFlag;
+                        outResults[count].lineKind = lineKind;
                         ++count;
                         return true;
                     };
@@ -229,18 +233,19 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
                     if (tooltip.has_value())
                     {
                         const auto& tip = tooltip.value();
-                        // Name header, then type, then description, then notes,
-                        // then each formatted fact line - all matched=1, all
+                        // Name header (kind 1), then type (kind 2), then
+                        // description (kind 3), then notes (kind 4), then each
+                        // formatted fact line (kind 5) - all matched=1, all
                         // sharing this OCR result's region geometry.
-                        emitLine(tip.nameTranslated, 1);
+                        emitLine(tip.nameTranslated, 1, 1);
                         if (!tip.typeTranslated.empty())
-                            emitLine(tip.typeTranslated, 1);
+                            emitLine(tip.typeTranslated, 1, 2);
                         if (!tip.descriptionTranslated.empty())
-                            emitLine(tip.descriptionTranslated, 1);
+                            emitLine(tip.descriptionTranslated, 1, 3);
                         for (const auto& note : tip.notes)
-                            emitLine(note, 1);
+                            emitLine(note, 1, 4);
                         for (const auto& factLine : tip.factLines)
-                            emitLine(factLine, 1);
+                            emitLine(factLine, 1, 5);
                     }
                     else
                     {
@@ -249,13 +254,14 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
                         auto translation = handle->translator.translate(line);
                         if (translation.has_value())
                         {
-                            emitLine(translation.value().translated, 1);
+                            // Name-only match (no full tooltip): legacy kind 0.
+                            emitLine(translation.value().translated, 1, 0);
                         }
                         else
                         {
                             // No dictionary match: surface the raw OCR line so
-                            // the user can see OCR is working.
-                            emitLine(line, 0);
+                            // the user can see OCR is working. Legacy kind 0.
+                            emitLine(line, 0, 0);
                         }
                     }
                 }
