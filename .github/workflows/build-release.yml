@@ -92,8 +92,15 @@ jobs:
           # Copy all dictionaries (all locales)
           Copy-Item "data/dictionaries/*" "$releaseDir/data/dictionaries/" -Recurse
 
-          # Copy skilldata (reconstructed full-tooltip dataset, all locales)
-          Copy-Item "data/skilldata/*" "$releaseDir/data/skilldata/" -Recurse
+          # Copy skilldata (reconstructed full-tooltip dataset, all locales).
+          # Guard against an empty/absent tree so the release still builds when
+          # the dataset is intentionally excluded; the DLL degrades to name-only
+          # translation when data/skilldata is missing.
+          if (Test-Path "data/skilldata/*") {
+            Copy-Item "data/skilldata/*" "$releaseDir/data/skilldata/" -Recurse
+          } else {
+            Write-Host "data/skilldata is empty; shipping without full-tooltip dataset (name-only translation)."
+          }
 
           # Copy tessdata
           Copy-Item "staging/data/tessdata/eng.traineddata" "$releaseDir/data/tessdata/"
