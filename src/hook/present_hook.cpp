@@ -34,8 +34,8 @@ namespace {
     ID3D11DeviceContext* g_context = nullptr;
     bool g_overlayInitialized = false;
 
-    // F8 hotkey debounce state for GetAsyncKeyState polling
-    bool g_f8WasPressed = false;
+    // Toggle chord (Right Ctrl + Space) debounce state for GetAsyncKeyState polling
+    bool g_toggleChordWasPressed = false;
 
     // Forward declaration
     void cleanupDeviceObjects();
@@ -119,17 +119,21 @@ namespace {
             }
         }
 
-        // Poll GetAsyncKeyState for F8 toggle (works even if WndProc hook fails)
+        // Poll GetAsyncKeyState for the Right Ctrl + Space toggle chord (works
+        // even if the WndProc hook fails). The chord requires BOTH keys down;
+        // merely holding Right Ctrl (the drag-panel modifier) never toggles.
         if (g_overlayInitialized)
         {
-            bool f8Pressed = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
-            if (f8Pressed && !g_f8WasPressed)
+            bool chordPressed =
+                ((GetAsyncKeyState(VK_RCONTROL) & 0x8000) != 0) &&
+                ((GetAsyncKeyState(VK_SPACE) & 0x8000) != 0);
+            if (chordPressed && !g_toggleChordWasPressed)
             {
-                // Rising edge: key was not pressed last frame, is pressed this frame
+                // Rising edge: chord was not fully down last frame, is now.
                 bronco::overlay::toggleVisibility();
-                bronco::log::info("hookedPresent: F8 toggle via GetAsyncKeyState");
+                bronco::log::info("hookedPresent: toggle via Right Ctrl + Space");
             }
-            g_f8WasPressed = f8Pressed;
+            g_toggleChordWasPressed = chordPressed;
         }
 
         // Run the OCR pipeline (captures at configured interval, non-blocking)

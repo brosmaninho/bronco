@@ -18,7 +18,7 @@ BEGIN
         BLOCK "040904B0"
         BEGIN
             VALUE "CompanyName",      "Bronco Project"
-            VALUE "FileDescription",  "Bronco - Guild Wars 2 Translation Overlay"
+            VALUE "FileDescription",  "Bronco Overlay - Guild Wars 2"
             VALUE "FileVersion",      "0.1.0.0"
             VALUE "InternalName",     "d3d11"
             VALUE "LegalCopyright",   "Copyright (C) Bronco Project"

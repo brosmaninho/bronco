@@ -119,16 +119,10 @@ namespace {
     // Our window procedure that intercepts input for ImGui and handles hotkeys
     LRESULT WINAPI hookedWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
-        // Check for toggle hotkey (configured key, default VK_F8)
-        if (msg == WM_KEYDOWN)
-        {
-            int hotkey = bronco::Config::instance().toggleHotkey();
-            if (static_cast<int>(wParam) == hotkey)
-            {
-                toggleVisibility();
-                return 0; // Consume the key
-            }
-        }
+        // NOTE: the visibility toggle is handled exclusively by the Present-path
+        // chord (Right Ctrl + Space) polled in present_hook.cpp. It is the
+        // reliable source of truth (works regardless of the WndProc hook), so we
+        // deliberately do NOT handle a toggle hotkey here to avoid double-firing.
 
         // Determine whether this is a mouse message up front so every mouse
         // code path can be reasoned about explicitly.
@@ -319,20 +313,20 @@ void render(IDXGISwapChain* swapChain)
             windowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoInputs;
         }
 
-        if (ImGui::Begin("Bronco - Tradutor##BroncoWindow", nullptr, windowFlags))
+        if (ImGui::Begin("Bronco Overlay##BroncoWindow", nullptr, windowFlags))
         {
             // Welcome message for the first 5 seconds.
             ULONGLONG elapsed = GetTickCount64() - g_initTimestamp;
             if (elapsed < 5000)
             {
                 ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f),
-                    "Overlay ativo! Pressione F8 para toggle.");
+                    "Overlay ativo! Ctrl Direito + Espaco para toggle.");
                 ImGui::Separator();
             }
 
             // Persistent hint so the user always knows how to move the panel.
             ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                "Segure Ctrl Direito para mover o painel. F8 liga/desliga.");
+                "Segure Ctrl Direito para mover o painel. Ctrl Direito + Espaco liga/desliga.");
             ImGui::Separator();
 
             // Build a clean, matched-only view of the current translations,
