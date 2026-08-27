@@ -273,6 +273,13 @@ void render(IDXGISwapChain* swapChain)
 
     ImGuiIO& io = ImGui::GetIO();
 
+    // The panel is passive by default: it is only movable / interactive while
+    // the user holds ALT ("unlocked"). This is read once here and used both to
+    // choose the window flags below and to update the per-frame capture
+    // snapshot after the window is built, so it must be declared in the
+    // function scope (not inside the window block).
+    const bool altHeld = isAltHeld();
+
     // --- Draggable Bronco window ---
     // A real ImGui window with a title bar so the user can drag it anywhere.
     // It is semi-transparent and shows the active translations (or a waiting
@@ -287,12 +294,10 @@ void render(IDXGISwapChain* swapChain)
         // Semi-transparent background for this window only.
         ImGui::SetNextWindowBgAlpha(0.65f);
 
-        // The panel is passive by default: it is only movable / interactive
-        // while the user holds ALT ("unlocked"). When ALT is not held (locked)
-        // we add NoMove + NoInputs so the window cannot be dragged and swallows
-        // no mouse input, keeping the overlay 100% passive. When ALT is held we
-        // use the movable flags so the title bar can be dragged.
-        const bool altHeld = isAltHeld();
+        // When ALT is not held (locked) we add NoMove + NoInputs so the window
+        // cannot be dragged and swallows no mouse input, keeping the overlay
+        // 100% passive. When ALT is held we use the movable flags so the title
+        // bar can be dragged.
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoCollapse;
         if (!altHeld)
         {
