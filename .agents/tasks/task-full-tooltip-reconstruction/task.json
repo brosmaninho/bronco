@@ -1,7 +1,20 @@
 {
   "task_id": "task-full-tooltip-reconstruction",
   "task_description": "Option B: identify a GW2 skill by its NAME via OCR (already working), then reconstruct and display the FULL skill tooltip translated to PT-BR from the GW2 official API's structured data. PART 1 (Python dictionary-generator): produce data/skilldata/pt-br/skills_tooltips.json (name/type/description/flags/categories + full facts with value fields) and data/dictionaries/pt-br/fact_labels.json (curated + Argos-translated distinct fact labels). PART 2 (bronco_ocr.dll): load skills_tooltips.json, add config key skilldata_path, and on a matched skill name emit the full translated tooltip as ready-formatted lines (raise result cap to 96). PART 3 (d3d11.dll overlay): render the reconstructed tooltip cleanly (name header, type, wrapped description, notes, bulleted fact list); keep matched-only display, Right Ctrl drag, F8, follow-mouse OCR; unmatched raw OCR stays in the log; update CI packaging + install/uninstall scripts to ship data/skilldata.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "review": {
+    "verdict": "APPROVED",
+    "version": "v1",
+    "file": ".agents/tasks/task-full-tooltip-reconstruction/2026-08-27-172900-review.md",
+    "note": "APPROVED with no blocking issues. Four non-blocking observations: (1) Damage facts show no absolute value - inherent GW2 static-data limitation (only hit_count/dmg_multiplier ship statically); (2) skill description quality depends on the full Argos run; (3) CI skilldata copy assumed non-empty tree - HARDENED in commit d77951f with a Test-Path guard; (4) unrelated pre-existing .agents task-tracking JSON present in working tree (not created by this task)."
+  },
+  "verification": {
+    "build": "skipped",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "C++ DLLs cannot be compiled in this Linux sandbox (Windows/MSVC/vcpkg only; CI builds on tag push) and there is no Dockerfile, so build/docker_build are skipped. The only runnable verification is the Python dictionary-generator tool: py_compile of the 3 changed .py files OK; `--dry-run` self-checks 11/11 [OK] including the 4 new ones (strip_markup, extract_skill_tooltip with unlisted BuffArray/Buff/PrefixedBuff and no icon, skill_tooltips schema+dedup, curated translate_label); offline sample `--category skill_tooltips --limit 400 --no-translate` produced data/skilldata/pt-br/skills_tooltips.json (335 skills, 0 icon leaks) and data/dictionaries/pt-br/fact_labels.json (120 labels), both valid JSON with required keys. The new self-checks exercise the real new code paths (they fail if strip_markup/extract_skill_tooltip/dataset builder/translate_label are reverted), so test_quality passes. C++ side validated by thorough static cross-file review: BroncoOcrResult marshalling reserves resultStorage to BRONCO_OCR_MAX_RESULTS(96) before the emit loop with a per-line cap check in emitLine (no dangling/overflow); extended bronco_ocr_initialize signature (adds const char* skillDataPath) is consistent across ocr_api.h/.cpp, ocr_loader.h/.cpp (PFN_Initialize + call), and pipeline.cpp with matching argument order; Dictionary::normalize and containsOnWordBoundary made public static and reused by SkillTooltipStore; skill_tooltips.cpp added to CMakeLists; config key skilldata_path consistent across config.h/config.cpp(load+save)/bronco_config.json; overlay render() keeps dragModifierHeld/g_captureMouse at function scope (no C2065 regression) with balanced braces (55/55, skill_tooltips 66/66); CI packaging + install(soft)/uninstall(remove) scripts + README updated for data/skilldata."
+  }
 }
