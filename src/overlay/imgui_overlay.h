@@ -44,4 +44,10 @@ void toggleVisibility();
 /// Check if the overlay is currently visible.
 bool isVisible();
 
+/// Get the game window handle passed to initialize() (desc.OutputWindow).
+/// Used by the pipeline to convert screen cursor coordinates to client
+/// coordinates that match the captured backbuffer pixel space. Returns nullptr
+/// if the overlay has not been initialized yet.
+HWND gameWindow();
+
 } // namespace bronco::overlay

@@ -9,6 +9,9 @@
     "ocr_confidence_threshold": 60.0,
     "ocr_interval_ms": 500,
     "overlay_enabled": true,
+    "ocr_follow_mouse": true,
+    "ocr_follow_width": 500,
+    "ocr_follow_height": 400,
     "ocr_regions": [
         {
             "label": "tooltip",

@@ -1,10 +1,13 @@
 #include "pipeline.h"
 #include "../config/config.h"
+#include "../ocr/ocr_engine.h"
 #include "../ocr/ocr_loader.h"
 #include "../overlay/imgui_overlay.h"
 #include "../log/logger.h"
 
+#include <algorithm>
 #include <chrono>
+#include <string>
 
 namespace bronco::pipeline {
 
@@ -185,8 +188,119 @@ void Pipeline::workerThread()
 
         if (pixels.empty()) continue;
 
-        // Get configured OCR regions
-        auto regions = bronco::Config::instance().ocrRegions();
+        // Determine which OCR regions to scan this cycle.
+        //
+        // Default mode (ocr_follow_mouse = true): GW2 renders tooltips where the
+        // mouse is, so a single region centered on the cursor is far more
+        // effective than the fixed 1920x1080 regions. We convert the screen
+        // cursor position to client coordinates via ScreenToClient, scale those
+        // client coordinates into the captured backbuffer pixel space (client
+        // size and backbuffer size can differ under windowed/borderless or DPI
+        // scaling), then clamp the region so it lies fully within
+        // [0,width)x[0,height). Clamping is REQUIRED because
+        // OcrEngine::recognizeRegions() silently SKIPS any region where x<0,
+        // y<0, x+width>screenWidth or y+height>screenHeight.
+        //
+        // Fallback mode (ocr_follow_mouse = false): use the fixed regions from
+        // config, exactly as before.
+        auto& config = bronco::Config::instance();
+        std::vector<bronco::ocr::ScreenRegion> regions;
+
+        if (config.ocrFollowMouse())
+        {
+            int regionWidth = config.ocrFollowWidth();
+            int regionHeight = config.ocrFollowHeight();
+
+            // Never let the region be larger than the captured frame.
+            if (regionWidth > width) regionWidth = width;
+            if (regionHeight > height) regionHeight = height;
+            if (regionWidth <= 0 || regionHeight <= 0) continue;
+
+            POINT pt = {};
+            HWND hwnd = bronco::overlay::gameWindow();
+            RECT clientRect = {};
+
+            // The follow-mouse region is only meaningful when we can map the
+            // cursor into the captured backbuffer's pixel space. That requires
+            // both a valid game HWND (so ScreenToClient is anchored to the game
+            // window rather than an arbitrary screen origin) and a valid,
+            // non-zero client rect (so we can scale client -> backbuffer). When
+            // either is missing (e.g., before overlay::initialize has run, or a
+            // failed GetClientRect) we skip the follow region for this cycle and
+            // let the code below fall back to the fixed Config::ocrRegions()
+            // path, rather than building a mis-placed region from raw screen
+            // coordinates (which would land in the wrong place on multi-monitor
+            // or windowed layouts).
+            if (GetCursorPos(&pt) && hwnd && GetClientRect(hwnd, &clientRect))
+            {
+                const int clientW = clientRect.right - clientRect.left;
+                const int clientH = clientRect.bottom - clientRect.top;
+
+                if (clientW > 0 && clientH > 0)
+                {
+                    // Convert the screen cursor to window-client coordinates.
+                    ScreenToClient(hwnd, &pt);
+
+                    // Client coordinates only equal backbuffer pixels when the
+                    // client area maps 1:1 onto the backbuffer. In windowed /
+                    // borderless or DPI-scaled setups the client size differs
+                    // from the captured frame (width/height come from
+                    // desc.BufferDesc.Width/Height), so scale the client-space
+                    // cursor into backbuffer pixel space. Use double-precision
+                    // intermediate math to avoid int overflow/truncation, then
+                    // clamp below. When the sizes already match, the scale is a
+                    // no-op.
+                    double cursorX = static_cast<double>(pt.x);
+                    double cursorY = static_cast<double>(pt.y);
+                    if (clientW != width)
+                    {
+                        cursorX = cursorX * (static_cast<double>(width) / clientW);
+                    }
+                    if (clientH != height)
+                    {
+                        cursorY = cursorY * (static_cast<double>(height) / clientH);
+                    }
+
+                    int x = static_cast<int>(cursorX) - regionWidth / 2;
+                    int y = static_cast<int>(cursorY) - regionHeight / 2;
+
+                    // Clamp so the region lies fully within the captured frame,
+                    // which is exactly what recognizeRegions() requires (it
+                    // silently skips regions where x<0, y<0, x+w>width or
+                    // y+h>height).
+                    if (x < 0) x = 0;
+                    if (y < 0) y = 0;
+                    if (x + regionWidth > width) x = width - regionWidth;
+                    if (y + regionHeight > height) y = height - regionHeight;
+
+                    bronco::ocr::ScreenRegion follow;
+                    follow.x = x;
+                    follow.y = y;
+                    follow.width = regionWidth;
+                    follow.height = regionHeight;
+                    follow.label = "follow_mouse";
+                    regions.push_back(follow);
+
+                    std::string regionMsg = "Pipeline: follow-mouse region x=" +
+                        std::to_string(x) + " y=" + std::to_string(y) +
+                        " w=" + std::to_string(regionWidth) +
+                        " h=" + std::to_string(regionHeight) +
+                        " (client=" + std::to_string(clientW) + "x" + std::to_string(clientH) +
+                        " frame=" + std::to_string(width) + "x" + std::to_string(height) +
+                        " scaledCursor=" + std::to_string(static_cast<int>(cursorX)) +
+                        "," + std::to_string(static_cast<int>(cursorY)) + ")";
+                    bronco::log::info(regionMsg.c_str());
+                }
+            }
+        }
+
+        // If follow-mouse produced no region (disabled, GetCursorPos failed, no
+        // valid game HWND yet, or a zero-size client rect), use the fixed
+        // regions from config as a fallback.
+        if (regions.empty())
+        {
+            regions = config.ocrRegions();
+        }
         if (regions.empty()) continue;
 
         // Build arrays for the C API
@@ -224,6 +338,23 @@ void Pipeline::workerThread()
             bronco::overlay::TranslatedEntry entry;
             entry.original = result.originalText ? result.originalText : "";
             entry.translated = result.translatedText ? result.translatedText : "";
+
+            // Diagnostic logging: report the recognized text and whether a
+            // dictionary translation was found. Heuristic: a translation is
+            // considered "found" when it is non-empty AND differs from the
+            // original text; otherwise there was no dictionary match. Skip
+            // empty text to avoid log spam.
+            if (!entry.original.empty())
+            {
+                bool translationFound = !entry.translated.empty() &&
+                                        entry.translated != entry.original;
+                std::string ocrMsg = "Pipeline: OCR text=\"" + entry.original + "\" -> " +
+                    (translationFound
+                        ? ("translation found: \"" + entry.translated + "\"")
+                        : std::string("no dictionary match"));
+                bronco::log::info(ocrMsg.c_str());
+            }
+
             entry.x = static_cast<float>(result.regionX);
             entry.y = static_cast<float>(result.regionY);
             entry.width = static_cast<float>(result.regionWidth);

@@ -65,6 +65,9 @@ bool Config::save()
         json["ocr_confidence_threshold"] = m_ocrConfidenceThreshold;
         json["ocr_interval_ms"] = m_ocrIntervalMs;
         json["overlay_enabled"] = m_overlayEnabled;
+        json["ocr_follow_mouse"] = m_ocrFollowMouse;
+        json["ocr_follow_width"] = m_ocrFollowWidth;
+        json["ocr_follow_height"] = m_ocrFollowHeight;
 
         // Save OCR regions
         nlohmann::json regions = nlohmann::json::array();
@@ -158,6 +161,24 @@ bool Config::overlayEnabled() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     return m_overlayEnabled;
+}
+
+bool Config::ocrFollowMouse() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrFollowMouse;
+}
+
+int Config::ocrFollowWidth() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrFollowWidth;
+}
+
+int Config::ocrFollowHeight() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_ocrFollowHeight;
 }
 
 std::vector<bronco::ocr::ScreenRegion> Config::ocrRegions() const
@@ -261,6 +282,15 @@ bool Config::loadInternal(const std::filesystem::path& configPath)
 
         if (json.contains("overlay_enabled"))
             m_overlayEnabled = json["overlay_enabled"].get<bool>();
+
+        if (json.contains("ocr_follow_mouse"))
+            m_ocrFollowMouse = json["ocr_follow_mouse"].get<bool>();
+
+        if (json.contains("ocr_follow_width"))
+            m_ocrFollowWidth = json["ocr_follow_width"].get<int>();
+
+        if (json.contains("ocr_follow_height"))
+            m_ocrFollowHeight = json["ocr_follow_height"].get<int>();
 
         // Parse OCR regions
         if (json.contains("ocr_regions") && json["ocr_regions"].is_array())

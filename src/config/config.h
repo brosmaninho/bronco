@@ -45,6 +45,9 @@ public:
     float ocrConfidenceThreshold() const;
     int ocrIntervalMs() const;
     bool overlayEnabled() const;
+    bool ocrFollowMouse() const;
+    int ocrFollowWidth() const;
+    int ocrFollowHeight() const;
     std::vector<bronco::ocr::ScreenRegion> ocrRegions() const;
 
     // --- Setters (thread-safe writes) ---
@@ -81,6 +84,12 @@ private:
     float m_ocrConfidenceThreshold = 60.0f;
     int m_ocrIntervalMs = 500;
     bool m_overlayEnabled = true;
+    // Follow-mouse OCR: capture a region centered on the cursor each cycle.
+    // This is the default because GW2 tooltips render where the mouse is.
+    // When disabled, the fixed m_ocrRegions list is used as a fallback.
+    bool m_ocrFollowMouse = true;
+    int m_ocrFollowWidth = 500;
+    int m_ocrFollowHeight = 400;
     std::vector<bronco::ocr::ScreenRegion> m_ocrRegions;
 };
 
