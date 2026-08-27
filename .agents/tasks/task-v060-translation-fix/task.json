@@ -1,0 +1,26 @@
+{
+  "task_id": "task-v060-translation-fix",
+  "task_description": "Definitively fix that no translations appear in the overlay (GW2 skill tooltips like 'Plaguelands' not translated) by correcting the confirmed OCR/translation root causes: BGRA->grayscale+invert preprocessing, PSM_SINGLE_BLOCK, line-by-line dictionary matching, surfacing matched + unmatched raw lines, multi-line C-API marshalling with capacity safety, and lowering the confidence threshold default to 40. Also change the panel-drag modifier from ALT to RIGHT ALT or RIGHT CTRL (VK_RMENU / VK_RCONTROL). Windows-only DLL built via CI on tag push; commit to main only.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "review": {
+    "verdict": "APPROVED",
+    "pass": "v1",
+    "file": ".agents/tasks/task-v060-translation-fix/2026-08-27-140000-review.md",
+    "non_blocking_followups": [
+      "translateBatch in translator.cpp is now dead code duplicating the live line-split in ocr_api.cpp; consolidate or delete to prevent drift.",
+      "Description-line matching depends on Tesseract emitting the full sentence as one line identical to the dictionary key; monitor real hit rate via the unmatched-line logging.",
+      "Entries whose dictionary value equals the source (e.g. Plaguelands->Plaguelands) render identically to the source; document for users.",
+      "Region-level MeanTextConf gate is applied to the whole block; one noisy line can still drag the mean below 40 and discard the tooltip.",
+      "The 3-byte BGR branch in recognize() is defensive and never exercised by the current 4-byte BGRA capture path."
+    ]
+  },
+  "verification": {
+    "build": "skipped",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "Windows-only DLL (MSVC + CMake + vcpkg x64-windows-static-md); cannot be built or unit-tested on this Linux sandbox and the repo has no automated test suite. CI (.github/workflows/build-release.yml) builds on tag push, driven by the orchestrator. Verified by end-to-end source review + grep: PSM_SINGLE_BLOCK set; recognize() builds 1bpp grayscale+invert buffer and calls SetImage(buf,w,h,1,w); translateBatch splits lines and emits matched + raw-fallback entries; ocr_api emits one BroncoOcrResult per line, hard-caps at BRONCO_OCR_MAX_RESULTS(64), reserves resultStorage(64) before the loop so c_str() pointers cannot dangle; loader allocates 64 slots and resizes to resultCount; matched flag flows OcrResult->TranslationResult->BroncoOcrResult->TranslatedEntry->overlay (matched prominent, unmatched dimmer); config default 40 in config.h and bronco_config.json; drag modifier uses VK_RMENU||VK_RCONTROL via isDragModifierHeld with no isAltHeld/VK_MENU remaining and dragModifierHeld declared at function scope (no C2065-class scope error); hint text matches the user's requested wording."
+  }
+}
