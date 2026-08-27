@@ -20,6 +20,17 @@ namespace {
     // State
     std::atomic<bool> g_initialized{false};
     std::atomic<int> g_visible{1}; // Use int for fetch_xor atomicity
+
+    // Snapshot of whether the mouse is currently over the Bronco ImGui window.
+    // This is written once per frame from render() (on the render thread, right
+    // after ImGui has finished its per-frame hover test) and read from
+    // hookedWndProc (on the window thread). Using an atomic gives the WndProc a
+    // stable, self-consistent value instead of reading ImGui's live
+    // io.WantCaptureMouse, which can be stale or reflect the wrong frame when
+    // observed from a different thread. When false, no mouse message is ever
+    // consumed, so the game returns to normal "game mode" as soon as the cursor
+    // leaves the panel.
+    std::atomic<bool> g_wantCaptureMouse{false};
     std::mutex g_translationMutex;
     std::vector<TranslatedEntry> g_translations;
 
@@ -101,7 +112,10 @@ namespace {
         // window (title bar drag, etc.) can react to the mouse.
         if (g_visible.load() != 0)
         {
-            // Let ImGui update its internal input state for every message.
+            // Let ImGui update its internal input state for every message. We
+            // ALWAYS forward here (even when the cursor is not over the panel)
+            // so ImGui keeps tracking the mouse position and a drag begun on the
+            // title bar keeps working while the cursor moves.
             ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam);
 
             // Determine whether this is a mouse message.
@@ -109,13 +123,15 @@ namespace {
                                   msg == WM_NCMOUSEMOVE || msg == WM_NCLBUTTONDOWN ||
                                   msg == WM_NCRBUTTONDOWN;
 
-            // When the cursor is over the Bronco window, ImGui wants the mouse.
-            // Consume the message so it does NOT reach the game (prevents the
-            // camera from moving / target from being selected while dragging the
-            // panel). When ImGui does not want the mouse, fall through so the game
-            // gets normal camera/click behavior.
-            if (isMouseMessage && ImGui::GetCurrentContext() != nullptr &&
-                ImGui::GetIO().WantCaptureMouse)
+            // Consume the mouse message ONLY when the cursor is actually over the
+            // Bronco panel, using the per-frame snapshot captured in render().
+            // Reading the atomic (instead of the live ImGui io.WantCaptureMouse)
+            // avoids the stale / cross-thread state that caused the regression:
+            // the mouse stayed in "navigation mode" and never returned to "game
+            // mode" even when the panel was not focused / not under the cursor.
+            // When the cursor is not over the panel, we fall through and the game
+            // receives normal camera-rotate / target-select input.
+            if (isMouseMessage && g_wantCaptureMouse.load())
             {
                 return 0;
             }
@@ -207,8 +223,14 @@ void render(IDXGISwapChain* swapChain)
 {
     if (!g_initialized.load()) return;
 
-    // If not visible, do not render anything (respect toggle)
-    if (!g_visible.load()) return;
+    // If not visible, do not render anything (respect toggle). Also clear the
+    // mouse-capture snapshot so hookedWndProc never consumes mouse messages
+    // while the overlay is hidden (the game must be in full "game mode").
+    if (!g_visible.load())
+    {
+        g_wantCaptureMouse.store(false);
+        return;
+    }
 
     // Ensure render target exists (recreated after ResizeBuffers invalidation)
     if (!g_renderTargetView)
@@ -270,6 +292,15 @@ void render(IDXGISwapChain* swapChain)
         }
         ImGui::End();
     }
+
+    // Snapshot whether ImGui wants the mouse for this frame. This is read once
+    // here, on the render thread, right after the window was built and ImGui has
+    // finished its hover/active test. hookedWndProc (running on the window
+    // thread) reads this atomic instead of the live io.WantCaptureMouse so it
+    // gets a stable value that correctly tracks the cursor leaving the panel.
+    // io.WantCaptureMouse is true while the cursor is over the panel AND while a
+    // drag started on it is in progress, so title-bar dragging keeps working.
+    g_wantCaptureMouse.store(io.WantCaptureMouse);
 
     // Render ImGui
     ImGui::Render();
@@ -385,7 +416,15 @@ void setTranslations(const std::vector<TranslatedEntry>& entries)
 void toggleVisibility()
 {
     // Atomic toggle using fetch_xor - no TOCTOU race
-    g_visible.fetch_xor(1);
+    int previous = g_visible.fetch_xor(1);
+
+    // If we just hid the overlay (previous state was visible), immediately clear
+    // the mouse-capture snapshot so the game returns to "game mode" right away
+    // instead of waiting for the next render frame.
+    if (previous != 0)
+    {
+        g_wantCaptureMouse.store(false);
+    }
 }
 
 bool isVisible()
