@@ -142,9 +142,12 @@ rotulo nao esta no mapa (e nao passa por Argos em `--no-translate`).
     "version": "1.0.0",
     "skills": [
         {
-            "name_en": "Glyph of Elemental Harmony",
-            "name": "Glifo de Harmonia Elemental",
-            "type": "Heal",
+            "id": 14384,
+            "name_en": "Hammer Bash",
+            "name": "Pancada de Martelo",
+            "type": "Weapon",
+            "next_chain": 14385,
+            "prev_chain": 14358,
             "description": "...",
             "flags": ["NoUnderwater"],
             "categories": ["Glyph"],
@@ -169,11 +172,40 @@ rotulo nao esta no mapa (e nao passa por Argos em `--no-translate`).
 
 - Skills sao deduplicadas pela chave normalizada de `name_en` (primeira
   ocorrencia vence; nomes vazios descartados).
+- `id` (inteiro) esta **sempre** presente: e o id da skill no `/v2/skills` e a
+  chave usada para reconstruir cadeias de skills.
+- `next_chain` e `prev_chain` (inteiros) sao **opcionais**: aparecem **apenas**
+  para skills que fazem parte de uma cadeia. `next_chain` e o id da proxima
+  skill da cadeia e `prev_chain` o id da anterior. Skills fora de cadeia **nao**
+  tem essas chaves (elas sao omitidas, nunca inventadas), espelhando a forma
+  opcional da API.
 - Cada fact preserva `type` (verbatim), `label_en`/`label` (rotulo limpo EN +
   traduzido) e todos os campos de valor presentes: `value`, `duration`,
   `distance`, `percent`, `hit_count`, `dmg_multiplier`, `apply_count`, `status`
   (+ `status_en`), `description`, `field_type`, `finisher_type`, `target`.
 - UTF-8, `ensure_ascii=false`, indentacao de 4 espacos, newline final.
+
+### Skills encadeadas (chains)
+
+Algumas skills ocorrem **encadeadas**: uma leva a proxima quando ativada em
+sequencia (ex.: `Hammer Swing` -> `Hammer Bash` -> `Hammer Smash`). No GW2 isso
+e modelado pelos campos opcionais `next_chain` (id da proxima skill) e
+`prev_chain` (id da anterior) de cada objeto `/v2/skills`. Uma skill fora de
+cadeia nao tem nenhum dos dois.
+
+Para exibir a cadeia **inteira** a partir de qualquer skill identificada por
+OCR, reconstruimos a cadeia por id:
+
+1. Partindo do membro identificado, ande por `prev_chain` para tras ate a
+   **cabeca** da cadeia (o membro que nao tem `prev_chain`).
+2. A partir da cabeca, avance por `next_chain` para frente, coletando cada id
+   em ordem, ate o **fim** (o membro que nao tem `next_chain`).
+
+O resultado e a lista ordenada de ids da cadeia, valida a partir de qualquer
+membro de origem. A implementacao de referencia e a funcao pura
+`reconstruct_chain(skills_by_id, start_id)` em `generate_dictionaries.py` (o lado
+C++ do Bronco espelha esse mesmo algoritmo). Skills isoladas (sem cadeia)
+retornam uma lista com apenas o seu proprio id.
 
 ### Comandos exatos
 

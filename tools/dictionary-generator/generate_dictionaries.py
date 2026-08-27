@@ -288,6 +288,48 @@ def build_skill_tooltips_dataset(skills: List[dict]) -> dict:
     }
 
 
+def reconstruct_chain(skills_by_id: Dict[int, dict], start_id) -> List[int]:
+    """Reconstroi a cadeia completa de skills a partir de qualquer membro.
+
+    `skills_by_id` mapeia id -> dict de skill (cada um podendo ter os campos
+    opcionais 'next_chain'/'prev_chain'). Dado o id de QUALQUER membro, anda
+    por 'prev_chain' ate a cabeca (o membro sem prev_chain) e depois avanca por
+    'next_chain' coletando cada id em ordem. Retorna a lista ordenada de ids.
+
+    Esta e a implementacao de referencia que o lado C++ espelha. Puro/sem rede
+    (usada tambem pelos self-checks). Defensiva contra ciclos e ids ausentes:
+    - Se start_id nao existir em skills_by_id, retorna [] (ou [start_id] quando
+      ainda assim quisermos representar a skill isolada? Mantemos [] para nao
+      inventar dados).
+    - Ids ja visitados interrompem o passeio (protege contra dados ciclicos).
+    """
+    if start_id not in skills_by_id:
+        return []
+
+    # Anda para tras ate a cabeca (sem prev_chain), protegendo contra ciclos.
+    head_id = start_id
+    seen_back = {head_id}
+    while True:
+        skill = skills_by_id.get(head_id)
+        if not skill:
+            break
+        prev_id = skill.get("prev_chain")
+        if prev_id is None or prev_id not in skills_by_id or prev_id in seen_back:
+            break
+        head_id = prev_id
+        seen_back.add(head_id)
+
+    # Avanca para frente coletando ids em ordem, protegendo contra ciclos.
+    ordered: List[int] = []
+    seen_fwd = set()
+    cur_id = head_id
+    while cur_id is not None and cur_id in skills_by_id and cur_id not in seen_fwd:
+        ordered.append(cur_id)
+        seen_fwd.add(cur_id)
+        cur_id = skills_by_id[cur_id].get("next_chain")
+    return ordered
+
+
 def collect_untranslated_names(dataset: dict) -> List[str]:
     """Coleta nomes de skills nao traduzidos (name == name_en).
 
@@ -423,19 +465,27 @@ def generate_skill_tooltips(
                 }
             facts_out.append(fact_out)
 
-        skills.append(
-            {
-                "name_en": name_en,
-                "name": _tr_name(name_en),
-                "type": _tr(tip["type"]) if tip["type"] else "",
-                "description": (
-                    _tr(tip["description"]) if tip["description"] else ""
-                ),
-                "flags": tip["flags"],
-                "categories": tip["categories"],
-                "facts": facts_out,
-            }
-        )
+        skill_out = {
+            # 'id' sempre presente: cadeias sao reconstruidas por id.
+            "id": tip["id"],
+            "name_en": name_en,
+            "name": _tr_name(name_en),
+            "type": _tr(tip["type"]) if tip["type"] else "",
+            "description": (
+                _tr(tip["description"]) if tip["description"] else ""
+            ),
+            "flags": tip["flags"],
+            "categories": tip["categories"],
+            "facts": facts_out,
+        }
+        # Campos de cadeia: SO incluidos para membros de cadeia (a skill de
+        # origem realmente tem next_chain/prev_chain), mantendo skills fora de
+        # cadeia enxutas e espelhando a forma opcional da API.
+        if "next_chain" in tip:
+            skill_out["next_chain"] = tip["next_chain"]
+        if "prev_chain" in tip:
+            skill_out["prev_chain"] = tip["prev_chain"]
+        skills.append(skill_out)
 
     if not no_translate and trans is not None and trans.cache is not None:
         trans.cache.save()
@@ -683,6 +733,34 @@ def run_self_checks() -> int:
     )
     check("extract_skill_tooltip normaliza facts mistos (BuffArray/Buff/PrefixedBuff), sem icon", extract_ok)
 
+    # (i2) Campos de cadeia: uma skill membro de cadeia (next_chain/prev_chain
+    #      presentes) expoe esses ids verbatim; uma skill fora de cadeia NAO
+    #      ganha esses campos (chaves OMITIDAS, nunca inventadas).
+    chain_member = gw2_api.extract_skill_tooltip(
+        {
+            "id": 14384,
+            "name": "Hammer Bash",
+            "type": "Weapon",
+            "next_chain": 14385,
+            "prev_chain": 14358,
+        }
+    )
+    non_chain = gw2_api.extract_skill_tooltip(
+        {"id": 5492, "name": "Fireball", "type": "Weapon"}
+    )
+    chain_fields_ok = (
+        chain_member["id"] == 14384
+        and chain_member.get("next_chain") == 14385
+        and chain_member.get("prev_chain") == 14358
+        and non_chain["id"] == 5492
+        and "next_chain" not in non_chain
+        and "prev_chain" not in non_chain
+    )
+    check(
+        "extract_skill_tooltip expoe next_chain/prev_chain para membro de cadeia e omite para fora de cadeia",
+        chain_fields_ok,
+    )
+
     # (j) Schema do dataset de skill_tooltips + dedup por nome normalizado.
     ds = build_skill_tooltips_dataset(
         [
@@ -702,6 +780,76 @@ def run_self_checks() -> int:
         and ds["skills"][1]["name_en"] == "Meteor Shower"
     )
     check("dataset skill_tooltips (schema + dedup por nome normalizado)", ds_ok)
+
+    # (j2) Fim a fim: build_skill_tooltips_dataset PRESERVA id/next_chain/prev_chain
+    #      dos membros de cadeia e mantem uma skill fora de cadeia com seu id e
+    #      SEM links de cadeia inventados.
+    ds_chain = build_skill_tooltips_dataset(
+        [
+            {
+                "id": 14358,
+                "name_en": "Hammer Swing",
+                "name": "Hammer Swing",
+                "next_chain": 14384,
+                "facts": [],
+            },
+            {
+                "id": 14384,
+                "name_en": "Hammer Bash",
+                "name": "Hammer Bash",
+                "next_chain": 14385,
+                "prev_chain": 14358,
+                "facts": [],
+            },
+            {
+                "id": 14385,
+                "name_en": "Hammer Smash",
+                "name": "Hammer Smash",
+                "prev_chain": 14384,
+                "facts": [],
+            },
+            # Skill fora de cadeia: tem id, mas nenhum link de cadeia.
+            {"id": 5492, "name_en": "Fireball", "name": "Fireball", "facts": []},
+        ]
+    )
+    entries = {s["id"]: s for s in ds_chain["skills"]}
+    dataset_chain_ok = (
+        len(ds_chain["skills"]) == 4
+        # membros de cadeia preservam id + links
+        and entries[14358]["next_chain"] == 14384
+        and "prev_chain" not in entries[14358]
+        and entries[14384]["next_chain"] == 14385
+        and entries[14384]["prev_chain"] == 14358
+        and entries[14385]["prev_chain"] == 14384
+        and "next_chain" not in entries[14385]
+        # skill fora de cadeia preserva id e NAO ganha links inventados
+        and entries[5492]["id"] == 5492
+        and "next_chain" not in entries[5492]
+        and "prev_chain" not in entries[5492]
+    )
+    check(
+        "build_skill_tooltips_dataset preserva id/next_chain/prev_chain e nao inventa links",
+        dataset_chain_ok,
+    )
+
+    # (j3) reconstruct_chain retorna a ordem correta da cadeia de 3 skills
+    #      independentemente de qual membro for o ponto de partida, e trata
+    #      skill isolada/id ausente de forma defensiva.
+    skills_by_id = {s["id"]: s for s in ds_chain["skills"]}
+    expected_chain = [14358, 14384, 14385]
+    reconstruct_ok = (
+        reconstruct_chain(skills_by_id, 14358) == expected_chain
+        and reconstruct_chain(skills_by_id, 14384) == expected_chain
+        and reconstruct_chain(skills_by_id, 14385) == expected_chain
+        # skill fora de cadeia: cadeia de um unico id (ela mesma)
+        and reconstruct_chain(skills_by_id, 5492) == [5492]
+        # id ausente: sem invencao de dados
+        and reconstruct_chain(skills_by_id, 999999) == []
+    )
+    check(
+        "reconstruct_chain reconstroi a cadeia na ordem correta a partir de qualquer membro",
+        reconstruct_ok,
+    )
 
     # (l) collect_untranslated_names retorna exatamente os nomes com name==name_en
     #     (com trim), ignora name_en vazio, e sai ordenado e sem duplicatas.

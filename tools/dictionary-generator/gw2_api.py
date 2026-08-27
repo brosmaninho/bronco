@@ -370,13 +370,19 @@ def extract_skill_tooltip(obj: dict) -> dict:
     facts (list[dict])}. Cada fact e normalizado por _normalize_fact: 'type'
     verbatim (tipos desconhecidos preservados), rotulo 'text' sem marcacao, e
     todos os campos de valor presentes. Nenhuma URL de 'icon' e mantida.
+
+    Skills encadeadas: quando o objeto da API traz os campos OPCIONAIS
+    'next_chain' e/ou 'prev_chain' (ids inteiros de skills vizinhas na cadeia),
+    eles sao copiados verbatim para a saida. Uma skill fora de cadeia nao tem
+    esses campos, e por isso as chaves sao OMITIDAS quando ausentes (em vez de
+    virarem None), espelhando a forma opcional da API.
     """
     obj = obj or {}
     facts_in = obj.get("facts") or []
     facts = [_normalize_fact(f) for f in facts_in if isinstance(f, dict)]
     flags = [str(x) for x in (obj.get("flags") or [])]
     categories = [str(x) for x in (obj.get("categories") or [])]
-    return {
+    out = {
         "id": obj.get("id"),
         "name": (obj.get("name") or "").strip(),
         "type": (obj.get("type") or "").strip(),
@@ -385,3 +391,12 @@ def extract_skill_tooltip(obj: dict) -> dict:
         "categories": categories,
         "facts": facts,
     }
+    # Campos opcionais de cadeia: so incluidos quando presentes na API. Ausentes
+    # sao OMITIDOS (skill fora de cadeia fica enxuta).
+    next_chain = obj.get("next_chain")
+    if next_chain is not None:
+        out["next_chain"] = next_chain
+    prev_chain = obj.get("prev_chain")
+    if prev_chain is not None:
+        out["prev_chain"] = prev_chain
+    return out
