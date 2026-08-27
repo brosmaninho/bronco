@@ -18,7 +18,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(unofficial-minhook CONFIG REQUIRED)
+find_package(minhook CONFIG REQUIRED)
 
 # Build the OCR DLL first (has heavy dependencies: Tesseract, sqlite3)
 add_subdirectory(src/ocr)
