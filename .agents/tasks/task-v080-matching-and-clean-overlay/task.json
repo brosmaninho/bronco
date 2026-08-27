@@ -1,0 +1,15 @@
+{
+  "task_id": "task-v080-matching-and-clean-overlay",
+  "task_description": "v0.8.0 follow-up after v0.7.0. Fix three issues from user testing: (1) robust dictionary matching via normalized substring-contains so known terms (skill names) translate despite imperfect OCR spacing/newlines; (2) clean overlay that shows ONLY matched translations (de-duplicated, capped at 8), no raw-OCR noise on screen, keeping unmatched lines in the log only; (3) drag modifier = RIGHT CTRL ONLY with exact new hint text. bronco_ocr.dll changes (FEAT-001) and d3d11.dll overlay changes (FEAT-002) are independent.",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "skipped",
+    "tests": "skipped",
+    "test_quality": "skipped",
+    "docker_build": "skipped",
+    "summary": "Windows-only MSVC/vcpkg project; cannot build or run tests on this Linux sandbox (no test framework in repo). Verified by careful reading + header/cpp consistency checks. FEAT-002 (overlay): isDragModifierHeld returns RIGHT CTRL only (zero VK_RMENU/'ALT Direito' occurrences), exact hint string 'Segure Ctrl Direito para mover o painel. F8 liga/desliga.', matched-only + de-duped + capped-at-8 render with no entry.original path, dragModifierHeld at function scope. FEAT-001 (matching): normalize collapses whitespace+lowercases+trims; lookupContains uses single source-contains-key direction with substantial-key gate (multi-word>=6, single-word>=8) + word-boundary match (containsOnWordBoundary, declared in dictionary.h + defined in dictionary.cpp); DictionaryManager::translate does deterministic global exact-then-fuzzy over fixed priority (Skills,Items,NpcDialogues). CI builds both DLLs on tag push (orchestrator-driven).",
+    "semantic_review": "v2 APPROVED (2026-08-27-170000-review.md). v1 NEEDS_CHANGES issues (short common-word hijack, reverse over-match, non-deterministic category precedence) all resolved in commit 1ce94b8. Two non-blocking residuals: (a) intended trade-off, 205 single-word skill names <8 chars translate via exact path only (no OCR-noise tolerance); (b) data follow-up, ~257 skill entries have translated==en so a match can render text identical to source."
+  }
+}
