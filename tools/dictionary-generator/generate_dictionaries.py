@@ -288,6 +288,60 @@ def build_skill_tooltips_dataset(skills: List[dict]) -> dict:
     }
 
 
+def collect_untranslated_names(dataset: dict) -> List[str]:
+    """Coleta nomes de skills nao traduzidos (name == name_en).
+
+    Puro/sem rede: percorre dataset['skills'] e retorna, ordenada e sem
+    duplicatas, a lista de name_en cujo nome traduzido e igual ao ingles
+    (comparacao com trim). Entradas com name_en vazio sao ignoradas. Usado
+    tanto pelo relatorio --report-untranslated quanto pelos self-checks.
+    """
+    names = set()
+    for skill in dataset.get("skills", []) or []:
+        name_en = (skill.get("name_en") or "").strip()
+        if not name_en:
+            continue
+        name = (skill.get("name") or "").strip()
+        if name == name_en:
+            names.add(name_en)
+    return sorted(names)
+
+
+# Mapa curado de nomes de skills EN -> PT-BR aplicado ANTES do fallback Argos.
+# Arquivo opcional; ausente = no-op (mapa vazio). Chaves comparadas de forma
+# case-insensitive sobre o nome ja com trim (espelha normalize_key). Afeta
+# SOMENTE o nome de exibicao ('name'), nunca 'name_en'. Mantido pequeno e
+# restrito a nomes inequivocamente traduziveis (proprios nomes proprios que
+# es/fr/de oficiais mantem em ingles NAO entram aqui).
+NAME_OVERRIDES_FILE = TOOL_DIR / "name_overrides_pt_br.json"
+
+
+def load_name_overrides(path: Path = NAME_OVERRIDES_FILE) -> Dict[str, str]:
+    """Carrega o mapa curado de nomes EN->PT-BR indexado case-insensitive.
+
+    Retorna {chave_normalizada: traducao}. Arquivo ausente ou vazio = {}.
+    """
+    try:
+        with Path(path).open("r", encoding="utf-8") as fh:
+            raw = json.load(fh)
+    except FileNotFoundError:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    overrides: Dict[str, str] = {}
+    for en, translated in raw.items():
+        key = normalize_key(en)
+        value = (translated or "").strip()
+        if key and value:
+            overrides[key] = value
+    return overrides
+
+
+def apply_name_override(name_en: str, overrides: Dict[str, str]) -> str:
+    """Retorna a traducao curada para name_en, ou '' se nao houver override."""
+    return overrides.get(normalize_key(name_en), "")
+
+
 def generate_skill_tooltips(
     client: gw2_api.GW2Client,
     trans,
@@ -311,6 +365,16 @@ def generate_skill_tooltips(
 
     def _tr(label: str) -> str:
         return translate_label(label, trans, no_translate)
+
+    # Overrides curados de nome (EN->PT-BR). Aplicados ANTES do fallback Argos
+    # e SO ao nome de exibicao ('name'), nunca a 'name_en'. Arquivo ausente = {}.
+    name_overrides = load_name_overrides()
+
+    def _tr_name(name_en: str) -> str:
+        override = apply_name_override(name_en, name_overrides)
+        if override:
+            return override
+        return _tr(name_en)
 
     # Acumula o mapa de rotulos de facts distintos (label_en -> traduzido).
     label_map: Dict[str, str] = {}
@@ -362,7 +426,7 @@ def generate_skill_tooltips(
         skills.append(
             {
                 "name_en": name_en,
-                "name": _tr(name_en),
+                "name": _tr_name(name_en),
                 "type": _tr(tip["type"]) if tip["type"] else "",
                 "description": (
                     _tr(tip["description"]) if tip["description"] else ""
@@ -639,6 +703,52 @@ def run_self_checks() -> int:
     )
     check("dataset skill_tooltips (schema + dedup por nome normalizado)", ds_ok)
 
+    # (l) collect_untranslated_names retorna exatamente os nomes com name==name_en
+    #     (com trim), ignora name_en vazio, e sai ordenado e sem duplicatas.
+    untr_dataset = {
+        "skills": [
+            {"name_en": "Plaguelands", "name": "Plaguelands"},  # nao traduzido
+            {"name_en": "Fireball", "name": "Bola de Fogo"},  # traduzido
+            {"name_en": "  Meteor  ", "name": "Meteor"},  # nao traduzido (trim)
+            {"name_en": "", "name": ""},  # name_en vazio -> ignorado
+            {"name_en": "Aegis", "name": "Aegis"},  # nao traduzido
+        ]
+    }
+    untr = collect_untranslated_names(untr_dataset)
+    untranslated_ok = untr == ["Aegis", "Meteor", "Plaguelands"]
+    check(
+        "collect_untranslated_names pega name==name_en (com trim), ignora vazios, ordena",
+        untranslated_ok,
+    )
+
+    # (m) Overrides curados de nome: aplicam ao 'name' (case-insensitive),
+    #     nunca a 'name_en'; nome ausente do mapa cai no fluxo normal.
+    overrides = {normalize_key("Ice Shard"): "Fragmento de Gelo"}
+    hit = apply_name_override("ice shard", overrides)  # case-insensitive
+    miss = apply_name_override("Plaguelands", overrides)  # ausente -> ''
+    override_ok = hit == "Fragmento de Gelo" and miss == ""
+    check(
+        "apply_name_override aplica case-insensitive e retorna '' para nome ausente",
+        override_ok,
+    )
+
+    # (n) load_name_overrides: arquivo ausente e no-op (mapa vazio).
+    with tempfile.TemporaryDirectory() as tmp:
+        missing = Path(tmp) / "nao_existe.json"
+        empty_ok = load_name_overrides(missing) == {}
+        override_file = Path(tmp) / "over.json"
+        with override_file.open("w", encoding="utf-8") as fh:
+            json.dump({"Ice Shard": "Fragmento de Gelo", "": "ignorado", "X": "  "}, fh)
+        loaded = load_name_overrides(override_file)
+        load_ok = (
+            empty_ok
+            and loaded == {normalize_key("Ice Shard"): "Fragmento de Gelo"}
+        )
+    check(
+        "load_name_overrides: ausente=vazio, indexa case-insensitive, descarta chaves/valores vazios",
+        load_ok,
+    )
+
     # (k) translate_label: curado case-insensitive, passthrough em no-translate.
     label_ok = (
         translate_label("Damage", None, no_translate=True) == "Dano"
@@ -714,7 +824,44 @@ def parse_args(argv=None):
         action="store_true",
         help="roda self-checks offline (sem rede, sem Argos) e sai.",
     )
+    p.add_argument(
+        "--report-untranslated",
+        action="store_true",
+        help="lista e conta as skills com nome nao traduzido (name == name_en) "
+        "a partir do dataset ja gerado e sai (sem rede, sem Argos).",
+    )
     return p.parse_args(argv)
+
+
+def report_untranslated(skilldata_output_dir: Path) -> int:
+    """Le o dataset ja gerado e imprime as skills com nome nao traduzido.
+
+    Retorna 0 no sucesso; codigo != 0 se o dataset estiver ausente/invalido.
+    Nao traduz nada nem acessa a rede.
+    """
+    dataset_path = Path(skilldata_output_dir) / "skills_tooltips.json"
+    try:
+        with dataset_path.open("r", encoding="utf-8") as fh:
+            dataset = json.load(fh)
+    except FileNotFoundError:
+        print(
+            f"Dataset nao encontrado: {dataset_path}\n"
+            "Gere-o antes com: python3 generate_dictionaries.py --category skill_tooltips"
+        )
+        return 1
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"Falha ao ler o dataset {dataset_path}: {exc}")
+        return 1
+
+    names = collect_untranslated_names(dataset)
+    total_skills = len(dataset.get("skills", []) or [])
+    print(
+        f"Skills nao traduzidas (name == name_en): {len(names)} "
+        f"de {total_skills} skills em {dataset_path}"
+    )
+    for name in names:
+        print(name)
+    return 0
 
 
 def main(argv=None) -> int:
@@ -722,6 +869,9 @@ def main(argv=None) -> int:
 
     if args.dry_run:
         return run_self_checks()
+
+    if args.report_untranslated:
+        return report_untranslated(args.skilldata_output_dir)
 
     if args.install_model:
         print("Instalando modelo Argos en->pt (pode baixar ~100MB+)...")
