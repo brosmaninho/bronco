@@ -37,6 +37,7 @@ public:
 
     std::string targetLocale() const;
     std::string dictionaryPath() const;
+    std::string skillDataPath() const;
     std::string tessDataPath() const;
     std::string ocrLanguage() const;
     std::size_t cacheCapacity() const;
@@ -76,6 +77,7 @@ private:
     // Settings (protected by m_mutex)
     std::string m_targetLocale = "pt-br";
     std::string m_dictionaryPath = "data/dictionaries";
+    std::string m_skillDataPath = "data/skilldata";
     std::string m_tessDataPath = "data/tessdata";
     std::string m_ocrLanguage = "eng";
     std::size_t m_cacheCapacity = 5000;

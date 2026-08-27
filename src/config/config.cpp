@@ -57,6 +57,7 @@ bool Config::save()
         nlohmann::json json;
         json["target_locale"] = m_targetLocale;
         json["dictionary_path"] = m_dictionaryPath;
+        json["skilldata_path"] = m_skillDataPath;
         json["tessdata_path"] = m_tessDataPath;
         json["ocr_language"] = m_ocrLanguage;
         json["cache_capacity"] = m_cacheCapacity;
@@ -113,6 +114,12 @@ std::string Config::dictionaryPath() const
 {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     return m_dictionaryPath;
+}
+
+std::string Config::skillDataPath() const
+{
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    return m_skillDataPath;
 }
 
 std::string Config::tessDataPath() const
@@ -258,6 +265,9 @@ bool Config::loadInternal(const std::filesystem::path& configPath)
 
         if (json.contains("dictionary_path"))
             m_dictionaryPath = json["dictionary_path"].get<std::string>();
+
+        if (json.contains("skilldata_path"))
+            m_skillDataPath = json["skilldata_path"].get<std::string>();
 
         if (json.contains("tessdata_path"))
             m_tessDataPath = json["tessdata_path"].get<std::string>();

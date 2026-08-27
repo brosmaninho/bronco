@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 
 namespace bronco::translation {
 
@@ -17,6 +18,19 @@ bool Translator::initialize(
     m_cache.resize(cacheCapacity);
 
     return m_dictionaries.loadLocale(dictionaryPath, locale);
+}
+
+bool Translator::loadSkillTooltips(const std::string& skillDataPath, const std::string& locale)
+{
+    // File layout mirrors the dictionaries: <skillDataPath>/<locale>/skills_tooltips.json.
+    std::filesystem::path file =
+        std::filesystem::path(skillDataPath) / locale / "skills_tooltips.json";
+    return m_skillTooltips.loadFromFile(file);
+}
+
+const SkillTooltipStore& Translator::skillTooltips() const
+{
+    return m_skillTooltips;
 }
 
 std::optional<TranslationResult> Translator::translate(const std::string& sourceText)

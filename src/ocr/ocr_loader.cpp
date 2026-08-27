@@ -89,6 +89,7 @@ bool OcrLoader::initialize(
     const std::string& language,
     const std::string& dictionaryPath,
     const std::string& locale,
+    const std::string& skillDataPath,
     float confidenceThreshold,
     int cacheCapacity)
 {
@@ -113,6 +114,7 @@ bool OcrLoader::initialize(
         language.c_str(),
         dictionaryPath.c_str(),
         locale.c_str(),
+        skillDataPath.c_str(),
         confidenceThreshold,
         cacheCapacity);
 

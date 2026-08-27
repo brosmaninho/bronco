@@ -11,6 +11,7 @@ set(BRONCO_OCR_SOURCES
     ocr_api.cpp
     ../translation/translator.cpp
     ../translation/dictionary.cpp
+    ../translation/skill_tooltips.cpp
 )
 
 add_library(bronco_ocr SHARED

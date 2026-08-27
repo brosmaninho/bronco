@@ -17,8 +17,10 @@
 /// write. The caller (OcrLoader) allocates exactly this many slots, and the DLL
 /// stops writing when it reaches this cap so the caller-allocated array is never
 /// overflowed. One OCR region can produce many recognized lines, so this is much
-/// larger than the region count.
-#define BRONCO_OCR_MAX_RESULTS 64
+/// larger than the region count. A full reconstructed skill tooltip emits a
+/// name header, type, description, notes, and one line per fact, so this cap is
+/// raised well above the old value to fit a complete multi-line tooltip.
+#define BRONCO_OCR_MAX_RESULTS 96
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +51,8 @@ BRONCO_OCR_API BroncoOcrHandle bronco_ocr_create(void);
 /// @param language Tesseract language code (e.g., "eng")
 /// @param dictionaryPath Path to dictionary base directory
 /// @param locale Target locale for translation (e.g., "pt-br")
+/// @param skillDataPath Path to the skilldata base directory (e.g.,
+///        "data/skilldata"); the DLL loads <skillDataPath>/<locale>/skills_tooltips.json
 /// @param confidenceThreshold Minimum OCR confidence (0-100)
 /// @param cacheCapacity LRU cache size for translations
 /// @return 1 on success, 0 on failure
@@ -58,6 +62,7 @@ BRONCO_OCR_API int bronco_ocr_initialize(
     const char* language,
     const char* dictionaryPath,
     const char* locale,
+    const char* skillDataPath,
     float confidenceThreshold,
     int cacheCapacity);
 
@@ -72,9 +77,11 @@ BRONCO_OCR_API int bronco_ocr_initialize(
 /// @param regionHeights Array of region heights
 /// @param regionCount Number of regions
 /// @param outResults Output array (caller-allocated). One region can yield
-///        multiple recognized lines, so the caller must provide at least 64
-///        slots; this function writes at most 64 results (BRONCO_OCR_MAX_RESULTS).
-/// @param outResultCount Number of valid results written (0..64)
+///        multiple recognized lines (and a matched skill emits a full
+///        multi-line tooltip), so the caller must provide at least
+///        BRONCO_OCR_MAX_RESULTS slots; this function writes at most
+///        BRONCO_OCR_MAX_RESULTS results.
+/// @param outResultCount Number of valid results written (0..BRONCO_OCR_MAX_RESULTS)
 /// @return 1 on success, 0 on failure
 BRONCO_OCR_API int bronco_ocr_process_frame(
     BroncoOcrHandle handle,

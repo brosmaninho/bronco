@@ -67,19 +67,22 @@ public:
     /// Set the category of this dictionary.
     void setCategory(Category cat) { m_category = cat; }
 
+    /// Normalize a string for case-insensitive lookup.
+    /// Lowercases every character, collapses whitespace runs into a single
+    /// ASCII space, and trims leading/trailing space. Public so other stores
+    /// (e.g. SkillTooltipStore) reuse the EXACT same normalization for their
+    /// lookup keys, avoiding divergence with the name-matching path.
+    static std::string normalize(const std::string& text);
+
+    /// Return true if `key` occurs inside `source` on word boundaries. Both
+    /// arguments are expected to already be normalized. Public so other stores
+    /// (e.g. SkillTooltipStore) reuse the EXACT same word-boundary contains
+    /// rule as the dictionary name matcher.
+    static bool containsOnWordBoundary(const std::string& source, const std::string& key);
+
 private:
     Category m_category = Category::Items;
     std::unordered_map<std::string, std::string> m_entries;
-
-    /// Normalize a string for case-insensitive lookup.
-    static std::string normalize(const std::string& text);
-
-    /// Return true if `key` occurs inside `source` on word boundaries, i.e.
-    /// every occurrence check requires the character immediately before and
-    /// after the match to be a space or a string boundary. Both arguments are
-    /// expected to already be normalized. Used by lookupContains() so a key
-    /// like "leap" matches "use leap now" but not "leaping" or "please".
-    static bool containsOnWordBoundary(const std::string& source, const std::string& key);
 };
 
 /// Manages all dictionaries for a specific locale.

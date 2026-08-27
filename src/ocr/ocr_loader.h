@@ -27,6 +27,8 @@ public:
     /// @param language Tesseract language code (e.g., "eng")
     /// @param dictionaryPath Path to dictionary base directory
     /// @param locale Target locale for translation (e.g., "pt-br")
+    /// @param skillDataPath Path to the skilldata base directory (e.g.,
+    ///        "data/skilldata")
     /// @param confidenceThreshold Minimum OCR confidence (0-100)
     /// @param cacheCapacity LRU cache size for translations
     /// @return true on success
@@ -35,6 +37,7 @@ public:
         const std::string& language,
         const std::string& dictionaryPath,
         const std::string& locale,
+        const std::string& skillDataPath,
         float confidenceThreshold,
         int cacheCapacity);
 
@@ -76,7 +79,7 @@ private:
 
     // Function pointer types
     using PFN_Create = BroncoOcrHandle(*)(void);
-    using PFN_Initialize = int(*)(BroncoOcrHandle, const char*, const char*, const char*, const char*, float, int);
+    using PFN_Initialize = int(*)(BroncoOcrHandle, const char*, const char*, const char*, const char*, const char*, float, int);
     using PFN_ProcessFrame = int(*)(BroncoOcrHandle, const uint8_t*, int, int, const int*, const int*, const int*, const int*, int, BroncoOcrResult*, int*);
     using PFN_Shutdown = void(*)(BroncoOcrHandle);
     using PFN_Destroy = void(*)(BroncoOcrHandle);

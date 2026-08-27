@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dictionary.h"
+#include "skill_tooltips.h"
 #include "../cache/lru_cache.h"
 #include "../ocr/ocr_engine.h"
 
@@ -37,6 +38,18 @@ public:
         const std::string& locale,
         std::size_t cacheCapacity = 5000);
 
+    /// Load the reconstructed skill-tooltip dataset for the given locale from
+    /// <skillDataPath>/<locale>/skills_tooltips.json. Kept separate from
+    /// initialize() so the engine still works (name-only translation) when the
+    /// skilldata file is absent. Additive; safe to call after initialize().
+    /// @param skillDataPath Base path to the skilldata directory
+    /// @param locale Target locale (e.g., "pt-br")
+    /// @return true if the tooltip dataset loaded successfully
+    bool loadSkillTooltips(const std::string& skillDataPath, const std::string& locale);
+
+    /// Access the loaded skill-tooltip store (may be empty if not loaded).
+    const SkillTooltipStore& skillTooltips() const;
+
     /// Translate a single text string.
     /// @param sourceText English text to translate
     /// @return Translation result, or std::nullopt if no translation found
@@ -65,6 +78,7 @@ public:
 
 private:
     DictionaryManager m_dictionaries;
+    SkillTooltipStore m_skillTooltips;
     bronco::cache::LruCache<std::string, TranslationResult> m_cache;
     std::string m_dictionaryPath;
 };

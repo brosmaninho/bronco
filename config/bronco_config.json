@@ -1,6 +1,7 @@
 {
     "target_locale": "pt-br",
     "dictionary_path": "data/dictionaries",
+    "skilldata_path": "data/skilldata",
     "tessdata_path": "data/tessdata",
     "ocr_language": "eng",
     "cache_capacity": 5000,

@@ -29,6 +29,7 @@ namespace {
             config.ocrLanguage(),
             config.dictionaryPath(),
             config.targetLocale(),
+            config.skillDataPath(),
             config.ocrConfidenceThreshold(),
             static_cast<int>(config.cacheCapacity())))
         {

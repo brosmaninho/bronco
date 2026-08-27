@@ -43,6 +43,7 @@ BRONCO_OCR_API int bronco_ocr_initialize(
     const char* language,
     const char* dictionaryPath,
     const char* locale,
+    const char* skillDataPath,
     float confidenceThreshold,
     int cacheCapacity)
 {
@@ -69,6 +70,22 @@ BRONCO_OCR_API int bronco_ocr_initialize(
             OutputDebugStringA("[Bronco OCR] Failed to initialize translator\n");
             handle->ocrEngine.shutdown();
             return 0;
+        }
+
+        // Load the reconstructed skill-tooltip dataset. This is ADDITIVE: a
+        // missing skilldata file must NOT fail engine init, so the name-only
+        // translation path keeps working. skillDataPath may be null if an older
+        // caller does not pass it.
+        if (skillDataPath)
+        {
+            if (handle->translator.loadSkillTooltips(skillDataPath, locale))
+            {
+                OutputDebugStringA("[Bronco OCR] Skill tooltips loaded\n");
+            }
+            else
+            {
+                OutputDebugStringA("[Bronco OCR] Skill tooltips not loaded (name-only path active)\n");
+            }
         }
 
         handle->initialized = true;
@@ -175,36 +192,72 @@ BRONCO_OCR_API int bronco_ocr_process_frame(
 
                 if (!line.empty())
                 {
-                    BroncoOcrEngine::ResultStorage storage;
-                    int matched = 0;
-
-                    auto translation = handle->translator.translate(line);
-                    if (translation.has_value())
+                    // Emit one display line: push its display text into
+                    // resultStorage (already reserved to BRONCO_OCR_MAX_RESULTS
+                    // before the loop so no reallocation dangles pointers) and
+                    // point outResults[count] at the stored string. The cap
+                    // check on EVERY emitted line guarantees we never write past
+                    // the caller-allocated array. Both original and translated
+                    // point at the SAME stored display string for tooltip lines;
+                    // the overlay renders the translated (PT-BR) text.
+                    auto emitLine =
+                        [&](const std::string& displayText, int matchedFlag) -> bool
                     {
-                        storage.original = translation.value().original;
-                        storage.translated = translation.value().translated;
-                        matched = 1;
+                        if (count >= BRONCO_OCR_MAX_RESULTS) return false;
+
+                        BroncoOcrEngine::ResultStorage storage;
+                        storage.original = displayText;
+                        storage.translated = displayText;
+                        handle->resultStorage.push_back(std::move(storage));
+
+                        outResults[count].originalText = handle->resultStorage.back().original.c_str();
+                        outResults[count].translatedText = handle->resultStorage.back().translated.c_str();
+                        outResults[count].confidence = ocr.confidence;
+                        outResults[count].regionX = ocr.region.x;
+                        outResults[count].regionY = ocr.region.y;
+                        outResults[count].regionWidth = ocr.region.width;
+                        outResults[count].regionHeight = ocr.region.height;
+                        outResults[count].matched = matchedFlag;
+                        ++count;
+                        return true;
+                    };
+
+                    // First, try to reconstruct a FULL skill tooltip from the
+                    // skilldata dataset using the raw OCR line (exact-then
+                    // word-boundary-contains match on the English skill name).
+                    auto tooltip = handle->translator.skillTooltips().lookup(line);
+                    if (tooltip.has_value())
+                    {
+                        const auto& tip = tooltip.value();
+                        // Name header, then type, then description, then notes,
+                        // then each formatted fact line - all matched=1, all
+                        // sharing this OCR result's region geometry.
+                        emitLine(tip.nameTranslated, 1);
+                        if (!tip.typeTranslated.empty())
+                            emitLine(tip.typeTranslated, 1);
+                        if (!tip.descriptionTranslated.empty())
+                            emitLine(tip.descriptionTranslated, 1);
+                        for (const auto& note : tip.notes)
+                            emitLine(note, 1);
+                        for (const auto& factLine : tip.factLines)
+                            emitLine(factLine, 1);
                     }
                     else
                     {
-                        // No dictionary match: surface the raw OCR line so the
-                        // user can see OCR is working (translated == original).
-                        storage.original = line;
-                        storage.translated = line;
-                        matched = 0;
+                        // No tooltip: fall back to the previous single-line
+                        // behavior (matched name translation, or raw line).
+                        auto translation = handle->translator.translate(line);
+                        if (translation.has_value())
+                        {
+                            emitLine(translation.value().translated, 1);
+                        }
+                        else
+                        {
+                            // No dictionary match: surface the raw OCR line so
+                            // the user can see OCR is working.
+                            emitLine(line, 0);
+                        }
                     }
-
-                    handle->resultStorage.push_back(std::move(storage));
-
-                    outResults[count].originalText = handle->resultStorage.back().original.c_str();
-                    outResults[count].translatedText = handle->resultStorage.back().translated.c_str();
-                    outResults[count].confidence = ocr.confidence;
-                    outResults[count].regionX = ocr.region.x;
-                    outResults[count].regionY = ocr.region.y;
-                    outResults[count].regionWidth = ocr.region.width;
-                    outResults[count].regionHeight = ocr.region.height;
-                    outResults[count].matched = matched;
-                    ++count;
                 }
 
                 if (nl == std::string::npos) break;
