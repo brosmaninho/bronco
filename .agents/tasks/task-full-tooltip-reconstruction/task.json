@@ -1,0 +1,7 @@
+{
+  "task_id": "task-full-tooltip-reconstruction",
+  "task_description": "Option B: identify a GW2 skill by its NAME via OCR (already working), then reconstruct and display the FULL skill tooltip translated to PT-BR from the GW2 official API's structured data. PART 1 (Python dictionary-generator): produce data/skilldata/pt-br/skills_tooltips.json (name/type/description/flags/categories + full facts with value fields) and data/dictionaries/pt-br/fact_labels.json (curated + Argos-translated distinct fact labels). PART 2 (bronco_ocr.dll): load skills_tooltips.json, add config key skilldata_path, and on a matched skill name emit the full translated tooltip as ready-formatted lines (raise result cap to 96). PART 3 (d3d11.dll overlay): render the reconstructed tooltip cleanly (name header, type, wrapped description, notes, bulleted fact list); keep matched-only display, Right Ctrl drag, F8, follow-mouse OCR; unmatched raw OCR stays in the log; update CI packaging + install/uninstall scripts to ship data/skilldata.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}

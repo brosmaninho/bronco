@@ -31,6 +31,7 @@ A camada de **busca de dados** (GW2 API) e **desacoplada** da camada de
 ```
 tools/dictionary-generator/
   gw2_api.py                # busca IDs + detalhes em lotes <=200, rate limit, retry, cache
+                            # + extract_skill_tooltip / strip_markup (tooltip estruturado)
   translator.py            # wrapper offline do Argos (import preguicoso) + cache de traducao
   generate_dictionaries.py # CLI principal (pipeline + self-checks)
   requirements.txt
@@ -78,7 +79,7 @@ python3 tools/dictionary-generator/generate_dictionaries.py \
 # Skills completas, traduzindo (requer modelo instalado)
 python3 tools/dictionary-generator/generate_dictionaries.py --category skills
 
-# Todas as categorias
+# Todas as categorias (inclui skill_tooltips)
 python3 tools/dictionary-generator/generate_dictionaries.py --category all
 
 # Itens (dataset gigante, ~90k IDs) - roda por horas
@@ -89,15 +90,104 @@ python3 tools/dictionary-generator/generate_dictionaries.py --category items
 
 | Flag | Descricao |
 | --- | --- |
-| `--category {skills,items,traits,specializations,professions,pets,masteries,all}` | Categoria a gerar (padrao: `skills`). |
+| `--category {skills,items,traits,specializations,professions,pets,masteries,skill_tooltips,all}` | Categoria a gerar (padrao: `skills`). `skill_tooltips` produz o dataset de tooltip + `fact_labels.json`. |
 | `--limit N` | Limita a quantidade de IDs (amostragem). |
 | `--install-model` | Baixa/instala o modelo Argos `en->pt` e sai. |
-| `--output-dir DIR` | Diretorio de saida (padrao: `data/dictionaries/pt-br`). |
+| `--output-dir DIR` | Diretorio de saida dos dicionarios, incl. `fact_labels.json` (padrao: `data/dictionaries/pt-br`). |
+| `--skilldata-output-dir DIR` | Diretorio de saida do dataset de tooltip de skills (padrao: `data/skilldata/pt-br`). |
 | `--cache-dir DIR` | Diretorio de cache (padrao: `tools/dictionary-generator/cache`). |
 | `--min-delay S` | Delay minimo entre requests (rate limit, padrao 0.25s). |
-| `--no-translate` | Nao traduz; `translated` recebe o ingles (demo de estrutura). |
+| `--no-translate` | Nao traduz; `translated`/campos traduzidos recebem o ingles (demo de estrutura). |
 | `--no-descriptions` | Gera apenas nomes. Por padrao a ferramenta traduz nomes **E** descricoes. |
 | `--dry-run` | Roda self-checks offline e sai. |
+
+## Reconstrucao de tooltip de skills (Opcao B)
+
+A categoria `skill_tooltips` gera dois arquivos que permitem ao Bronco
+**reconstruir o tooltip COMPLETO de uma skill em PT-BR** a partir apenas do
+**nome** identificado por OCR:
+
+1. `data/skilldata/pt-br/skills_tooltips.json` — dataset estruturado por skill
+   (nome, tipo, descricao, flags, categorias e a lista completa de `facts` com
+   seus valores e frequencias).
+2. `data/dictionaries/pt-br/fact_labels.json` — dicionario dos rotulos de facts
+   distintos (ex.: `Damage` -> `Dano`), no **mesmo** schema do loader C++.
+
+### Mapa curado de rotulos
+
+Antes de recorrer ao Argos, um **mapa curado** garante a terminologia PT-BR
+correta dos rotulos e status mais comuns (ex.: `Damage`->`Dano`,
+`Number of Targets`->`Número de Alvos`, `Recharge`->`Recarga`, `Might`->`Poder`,
+`Regeneration`->`Regeneração`, ...). O helper `translate_label` aplica o mapa de
+forma **case-insensitive** sobre o rotulo ja limpo; so cai no Argos quando o
+rotulo nao esta no mapa (e nao passa por Argos em `--no-translate`).
+
+### Tratamento de dados reais
+
+- Rotulos com marcacao tipo HTML (ex.: `<c=@abilitytype>Field Damage</c>`) sao
+  limpos com `strip_markup` antes de traduzir/armazenar (`-> Field Damage`).
+- Tipos de fact **nao listados** (ex.: `BuffArray` ou tipo vazio) sao
+  preservados **verbatim** em `type` e nunca quebram o gerador.
+- Facts `Buff`/`PrefixedBuff` carregam o termo relevante em `status` (ex.:
+  Might, Crippled, Regeneration) alem de `duration`, `apply_count` e
+  `description`; `PrefixedBuff` inclui um `prefix` aninhado.
+- URLs de `icon` **nao** sao armazenadas.
+
+### Schema de `skills_tooltips.json`
+
+```json
+{
+    "locale": "pt-br",
+    "category": "skills_tooltips",
+    "version": "1.0.0",
+    "skills": [
+        {
+            "name_en": "Glyph of Elemental Harmony",
+            "name": "Glifo de Harmonia Elemental",
+            "type": "Heal",
+            "description": "...",
+            "flags": ["NoUnderwater"],
+            "categories": ["Glyph"],
+            "facts": [
+                { "type": "Recharge", "label_en": "Recharge", "label": "Recarga", "value": 20 },
+                {
+                    "type": "PrefixedBuff",
+                    "label_en": "Apply Buff/Condition",
+                    "label": "Apply Buff/Condition",
+                    "duration": 20,
+                    "apply_count": 3,
+                    "status_en": "Might",
+                    "status": "Poder",
+                    "description": "...",
+                    "prefix": { "text": "...", "status_en": "Fire Attunement", "status": "...", "description": "..." }
+                }
+            ]
+        }
+    ]
+}
+```
+
+- Skills sao deduplicadas pela chave normalizada de `name_en` (primeira
+  ocorrencia vence; nomes vazios descartados).
+- Cada fact preserva `type` (verbatim), `label_en`/`label` (rotulo limpo EN +
+  traduzido) e todos os campos de valor presentes: `value`, `duration`,
+  `distance`, `percent`, `hit_count`, `dmg_multiplier`, `apply_count`, `status`
+  (+ `status_en`), `description`, `field_type`, `finisher_type`, `target`.
+- UTF-8, `ensure_ascii=false`, indentacao de 4 espacos, newline final.
+
+### Comandos exatos
+
+```bash
+# (1) Self-checks offline (sem rede, sem Argos)
+python3 tools/dictionary-generator/generate_dictionaries.py --dry-run
+
+# (2) Amostra offline SEM traducao (usa o cache bruto ja populado)
+python3 tools/dictionary-generator/generate_dictionaries.py \
+    --category skill_tooltips --limit 400 --no-translate
+
+# (3) Dataset COMPLETO traduzido (requer modelo Argos instalado)
+python3 tools/dictionary-generator/generate_dictionaries.py --category skill_tooltips
+```
 
 ## Idempotente e resumivel
 

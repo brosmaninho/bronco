@@ -40,8 +40,13 @@ import translator  # noqa: E402
 TOOL_DIR = Path(__file__).resolve().parent
 DEFAULT_CACHE_DIR = TOOL_DIR / "cache"
 DEFAULT_OUTPUT_DIR = Path("data/dictionaries/pt-br")
+DEFAULT_SKILLDATA_OUTPUT_DIR = Path("data/skilldata/pt-br")
 VERSION = "1.0.0"
 LOCALE = "pt-br"
+
+# Categoria virtual (nao e um endpoint da API) que produz o dataset de tooltip
+# de skills + o dicionario de rotulos de facts.
+SKILL_TOOLTIPS_CATEGORY = "skill_tooltips"
 
 # Categoria -> nome de arquivo de saida.
 CATEGORY_FILENAMES = {
@@ -52,7 +57,56 @@ CATEGORY_FILENAMES = {
     "professions": "professions.json",
     "pets": "pets.json",
     "masteries": "masteries.json",
+    "fact_labels": "fact_labels.json",
 }
+
+# Mapa curado de rotulos de facts EN -> PT-BR para garantir terminologia correta.
+# Aplicado ANTES de recorrer ao Argos. Chaves comparadas de forma
+# case-insensitive sobre o rotulo ja limpo (sem marcacao).
+CURATED_LABELS = {
+    "Damage": "Dano",
+    "Number of Targets": "Número de Alvos",
+    "Duration": "Duração",
+    "Recharge": "Recarga",
+    "Range": "Alcance",
+    "Radius": "Raio",
+    "Combo Field": "Campo de Combo",
+    "Combo Finisher": "Finalizador de Combo",
+    "Healing": "Cura",
+    "Might": "Poder",
+    "Fury": "Fúria",
+    "Vulnerability": "Vulnerabilidade",
+    "Regeneration": "Regeneração",
+    "Movement Speed": "Velocidade de Movimento",
+    "Bleeding": "Sangramento",
+    "Burning": "Queimadura",
+    "Poison": "Veneno",
+    "Chilled": "Congelamento",
+    "Crippled": "Aleijamento",
+    "Immobile": "Imobilizado",
+    "Weakness": "Fraqueza",
+    "Stun": "Atordoamento",
+    "Daze": "Tontura",
+    "Protection": "Proteção",
+    "Aegis": "Égide",
+    "Quickness": "Rapidez",
+    "Stability": "Estabilidade",
+    "Swiftness": "Ligeireza",
+    "Vigor": "Vigor",
+    "Resistance": "Resistência",
+    "Torment": "Tormento",
+    "Confusion": "Confusão",
+    "Number of Pulses": "Número de Pulsos",
+    "Count Recharge": "Recarga de Carga",
+    "Combo": "Combo",
+    "Distance": "Distância",
+    "Pulses": "Pulsos",
+    "Cast Time": "Tempo de Conjuração",
+    "Activation": "Ativação",
+}
+
+# Indice case-insensitive do mapa curado (chave normalizada -> PT-BR).
+_CURATED_LABELS_CI = {k.strip().lower(): v for k, v in CURATED_LABELS.items()}
 
 
 # ---------------------------------------------------------------------- #
@@ -98,6 +152,34 @@ def write_dictionary(output_dir: Path, category: str, dictionary: dict) -> Path:
         json.dump(dictionary, fh, ensure_ascii=False, indent=4)
         fh.write("\n")
     return out_path
+
+
+def write_skilldata(output_dir: Path, dataset: dict) -> Path:
+    """Escreve o dataset de tooltip de skills (espelha write_dictionary)."""
+    out_path = Path(output_dir) / "skills_tooltips.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_path.open("w", encoding="utf-8") as fh:
+        json.dump(dataset, fh, ensure_ascii=False, indent=4)
+        fh.write("\n")
+    return out_path
+
+
+def translate_label(label_en: str, trans, no_translate: bool) -> str:
+    """Traduz um rotulo/status de fact.
+
+    Ordem: (1) mapa curado (case-insensitive sobre o rotulo ja limpo);
+    (2) Argos via trans.translate quando nao em no_translate; (3) passthrough
+    do proprio label_en. Aceita None (retorna '').
+    """
+    label_en = (label_en or "").strip()
+    if not label_en:
+        return ""
+    curated = _CURATED_LABELS_CI.get(label_en.lower())
+    if curated is not None:
+        return curated
+    if not no_translate and trans is not None:
+        return trans.translate(label_en)
+    return label_en
 
 
 # ---------------------------------------------------------------------- #
@@ -178,6 +260,137 @@ def generate_category(
     out_path = write_dictionary(output_dir, category, dictionary)
     print(f"[{category}] escrito: {out_path} ({len(dictionary['entries'])} entradas)")
     return dictionary
+
+
+def build_skill_tooltips_dataset(skills: List[dict]) -> dict:
+    """Monta o dataset de tooltip de skills no schema esperado pelo lado C++.
+
+    Faz dedup por chave normalizada de name_en (primeira ocorrencia vence;
+    nomes vazios descartados). Puro/sem rede: usado tambem pelos self-checks.
+    """
+    seen = set()
+    deduped = []
+    for skill in skills:
+        name_en = (skill.get("name_en") or "").strip()
+        if not name_en:
+            continue
+        key = normalize_key(name_en)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(skill)
+    return {
+        "locale": LOCALE,
+        "category": "skills_tooltips",
+        "version": VERSION,
+        "skills": deduped,
+    }
+
+
+def generate_skill_tooltips(
+    client: gw2_api.GW2Client,
+    trans,
+    skilldata_output_dir: Path,
+    fact_labels_output_dir: Path,
+    limit: int = 0,
+    no_translate: bool = False,
+    batch_size: int = gw2_api.DEFAULT_BATCH_SIZE,
+) -> dict:
+    """Gera skills_tooltips.json + fact_labels.json a partir do cache de skills."""
+    print("[skill_tooltips] buscando lista de IDs...")
+    ids = client.fetch_id_list("skills")
+    if limit and limit > 0:
+        ids = ids[:limit]
+    print(f"[skill_tooltips] {len(ids)} IDs (limit={limit or 'nenhum'})")
+
+    n_batches = len(gw2_api.chunk_ids(ids, batch_size))
+    progress = lambda batches: _progress(  # noqa: E731
+        batches, "[skill_tooltips] baixando lotes", total=n_batches
+    )
+
+    def _tr(label: str) -> str:
+        return translate_label(label, trans, no_translate)
+
+    # Acumula o mapa de rotulos de facts distintos (label_en -> traduzido).
+    label_map: Dict[str, str] = {}
+
+    def _record_label(label_en: str) -> str:
+        label_en = (label_en or "").strip()
+        translated = _tr(label_en)
+        if label_en and label_en not in label_map:
+            label_map[label_en] = translated
+        return translated
+
+    skills: List[dict] = []
+    fetched = 0
+    for obj in client.iter_details(
+        "skills", ids, lang="en", batch_size=batch_size, progress=progress
+    ):
+        fetched += 1
+        tip = gw2_api.extract_skill_tooltip(obj)
+        name_en = tip["name"]
+        if not name_en:
+            continue
+
+        facts_out = []
+        for fact in tip["facts"]:
+            fact_out = dict(fact)  # copia rasa; preserva campos de valor
+            label_en = fact.get("text", "")
+            fact_out["label_en"] = label_en
+            fact_out["label"] = _record_label(label_en)
+            # Buff/PrefixedBuff: status carrega o termo relevante (Might, etc.).
+            if fact.get("status") is not None:
+                fact_out["status_en"] = fact.get("status", "")
+                fact_out["status"] = _tr(fact.get("status", ""))
+            if fact.get("description") is not None:
+                fact_out["description"] = (
+                    _tr(fact["description"]) if fact["description"] else ""
+                )
+            prefix = fact.get("prefix")
+            if isinstance(prefix, dict):
+                fact_out["prefix"] = {
+                    "text": prefix.get("text", ""),
+                    "status_en": prefix.get("status", ""),
+                    "status": _tr(prefix.get("status", "")),
+                    "description": (
+                        _tr(prefix["description"]) if prefix.get("description") else ""
+                    ),
+                }
+            facts_out.append(fact_out)
+
+        skills.append(
+            {
+                "name_en": name_en,
+                "name": _tr(name_en),
+                "type": _tr(tip["type"]) if tip["type"] else "",
+                "description": (
+                    _tr(tip["description"]) if tip["description"] else ""
+                ),
+                "flags": tip["flags"],
+                "categories": tip["categories"],
+                "facts": facts_out,
+            }
+        )
+
+    if not no_translate and trans is not None and trans.cache is not None:
+        trans.cache.save()
+
+    dataset = build_skill_tooltips_dataset(skills)
+    skilldata_path = write_skilldata(skilldata_output_dir, dataset)
+    print(
+        f"[skill_tooltips] escrito: {skilldata_path} "
+        f"({len(dataset['skills'])} skills, {fetched} objetos)"
+    )
+
+    # Dicionario de rotulos de facts no MESMO schema do loader C++.
+    pairs = [(en, translated) for en, translated in label_map.items()]
+    fact_dict = build_dictionary("fact_labels", pairs)
+    fact_labels_path = write_dictionary(fact_labels_output_dir, "fact_labels", fact_dict)
+    print(
+        f"[skill_tooltips] escrito: {fact_labels_path} "
+        f"({len(fact_dict['entries'])} rotulos de facts)"
+    )
+    return dataset
 
 
 # ---------------------------------------------------------------------- #
@@ -311,6 +524,130 @@ def run_self_checks() -> int:
     )
     check("Retry-After interpreta segundos e HTTP-date (RFC 7231)", retry_after_ok)
 
+    # (h) strip_markup remove marcacao tipo HTML mantendo o texto interno.
+    strip_ok = (
+        gw2_api.strip_markup("<c=@abilitytype>Field Damage</c>") == "Field Damage"
+        and gw2_api.strip_markup("Plain") == "Plain"
+        and gw2_api.strip_markup(None) == ""
+    )
+    check("strip_markup remove '<...>' e mantem o texto interno", strip_ok)
+
+    # (i) extract_skill_tooltip com tipos de fact mistos (incluindo um NAO listado
+    #     'BuffArray', um Buff com status/duration/apply_count e um PrefixedBuff
+    #     com prefixo aninhado): estrutura normalizada, valores preservados,
+    #     marcacao removida e SEM chaves 'icon'.
+    sample_skill = {
+        "id": 42,
+        "name": "Test Skill",
+        "type": "Weapon",
+        "description": "A test.",
+        "flags": ["NoUnderwater"],
+        "categories": ["Arcane"],
+        "facts": [
+            {
+                "text": "<c=@abilitytype>Field Damage</c>",
+                "type": "Damage",
+                "icon": "https://example/icon.png",
+                "hit_count": 1,
+                "dmg_multiplier": 0.9,
+            },
+            {"type": "BuffArray", "icon": "https://example/ba.png"},
+            {
+                "text": "Apply Buff/Condition",
+                "type": "Buff",
+                "icon": "https://example/b.png",
+                "duration": 10,
+                "status": "Might",
+                "apply_count": 3,
+                "description": "Increased outgoing damage.",
+            },
+            {
+                "text": "Apply Buff/Condition",
+                "type": "PrefixedBuff",
+                "icon": "https://example/pb.png",
+                "duration": 20,
+                "status": "Regeneration",
+                "apply_count": 1,
+                "description": "Gain health.",
+                "prefix": {
+                    "text": "Apply Buff/Condition",
+                    "icon": "https://example/pfx.png",
+                    "status": "Water Attunement",
+                    "description": "Cast water spells.",
+                },
+            },
+        ],
+    }
+    tip = gw2_api.extract_skill_tooltip(sample_skill)
+
+    def _no_icon(d):
+        if isinstance(d, dict):
+            return "icon" not in d and all(_no_icon(v) for v in d.values())
+        if isinstance(d, list):
+            return all(_no_icon(v) for v in d)
+        return True
+
+    f_damage, f_ba, f_buff, f_pbuff = tip["facts"]
+    extract_ok = (
+        tip["id"] == 42
+        and tip["type"] == "Weapon"
+        and tip["flags"] == ["NoUnderwater"]
+        and tip["categories"] == ["Arcane"]
+        and len(tip["facts"]) == 4
+        # markup removida do rotulo
+        and f_damage["text"] == "Field Damage"
+        and f_damage["type"] == "Damage"
+        and f_damage["hit_count"] == 1
+        and f_damage["dmg_multiplier"] == 0.9
+        # tipo nao listado preservado verbatim, sem crash
+        and f_ba["type"] == "BuffArray"
+        # Buff carrega status/duration/apply_count/description
+        and f_buff["type"] == "Buff"
+        and f_buff["status"] == "Might"
+        and f_buff["duration"] == 10
+        and f_buff["apply_count"] == 3
+        and f_buff["description"] == "Increased outgoing damage."
+        # PrefixedBuff com prefixo aninhado
+        and f_pbuff["type"] == "PrefixedBuff"
+        and f_pbuff["status"] == "Regeneration"
+        and isinstance(f_pbuff.get("prefix"), dict)
+        and f_pbuff["prefix"]["status"] == "Water Attunement"
+        and f_pbuff["prefix"]["description"] == "Cast water spells."
+        # NENHUMA chave 'icon' em lugar algum
+        and _no_icon(tip)
+    )
+    check("extract_skill_tooltip normaliza facts mistos (BuffArray/Buff/PrefixedBuff), sem icon", extract_ok)
+
+    # (j) Schema do dataset de skill_tooltips + dedup por nome normalizado.
+    ds = build_skill_tooltips_dataset(
+        [
+            {"name_en": "Fireball", "name": "Bola de Fogo", "facts": []},
+            {"name_en": "fireball", "name": "IGNORADO", "facts": []},  # dup por caso
+            {"name_en": "", "name": "vazio", "facts": []},  # vazio descartado
+            {"name_en": "Meteor Shower", "name": "Chuva de Meteoros", "facts": []},
+        ]
+    )
+    ds_ok = (
+        ds.get("locale") == LOCALE
+        and ds.get("category") == "skills_tooltips"
+        and ds.get("version") == VERSION
+        and isinstance(ds.get("skills"), list)
+        and len(ds["skills"]) == 2
+        and ds["skills"][0]["name_en"] == "Fireball"
+        and ds["skills"][1]["name_en"] == "Meteor Shower"
+    )
+    check("dataset skill_tooltips (schema + dedup por nome normalizado)", ds_ok)
+
+    # (k) translate_label: curado case-insensitive, passthrough em no-translate.
+    label_ok = (
+        translate_label("Damage", None, no_translate=True) == "Dano"
+        and translate_label("dAmAgE", None, no_translate=True) == "Dano"
+        and translate_label("Número de Alvos EN?", None, no_translate=True) == "Número de Alvos EN?"
+        and translate_label("Unknown Fancy Label", None, no_translate=True) == "Unknown Fancy Label"
+        and translate_label("", None, no_translate=True) == ""
+    )
+    check("translate_label usa curado case-insensitive e passa desconhecidos (no-translate)", label_ok)
+
     if failures:
         print(f"\n{len(failures)} self-check(s) falharam: {', '.join(failures)}")
         return 1
@@ -327,9 +664,9 @@ def parse_args(argv=None):
     )
     p.add_argument(
         "--category",
-        choices=gw2_api.SUPPORTED_ENDPOINTS + ["all"],
+        choices=gw2_api.SUPPORTED_ENDPOINTS + [SKILL_TOOLTIPS_CATEGORY, "all"],
         default="skills",
-        help="categoria a gerar (ou 'all' para todas).",
+        help="categoria a gerar (ou 'all' para todas, incluindo skill_tooltips).",
     )
     p.add_argument("--limit", type=int, default=0, help="limita a quantidade de IDs (amostragem).")
     p.add_argument(
@@ -342,6 +679,12 @@ def parse_args(argv=None):
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
         help="diretorio de saida (padrao: data/dictionaries/pt-br).",
+    )
+    p.add_argument(
+        "--skilldata-output-dir",
+        type=Path,
+        default=DEFAULT_SKILLDATA_OUTPUT_DIR,
+        help="diretorio de saida do dataset de tooltip de skills (padrao: data/skilldata/pt-br).",
     )
     p.add_argument(
         "--cache-dir",
@@ -396,11 +739,22 @@ def main(argv=None) -> int:
         trans_cache = translator.TranslationCache(cache_dir / "translations.json")
         trans = translator.Translator(cache=trans_cache)
 
-    categories = (
-        gw2_api.SUPPORTED_ENDPOINTS if args.category == "all" else [args.category]
-    )
+    if args.category == "all":
+        categories = gw2_api.SUPPORTED_ENDPOINTS + [SKILL_TOOLTIPS_CATEGORY]
+    else:
+        categories = [args.category]
 
     for category in categories:
+        if category == SKILL_TOOLTIPS_CATEGORY:
+            generate_skill_tooltips(
+                client=client,
+                trans=trans,
+                skilldata_output_dir=args.skilldata_output_dir,
+                fact_labels_output_dir=args.output_dir,
+                limit=args.limit,
+                no_translate=args.no_translate,
+            )
+            continue
         generate_category(
             category=category,
             client=client,

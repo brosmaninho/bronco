@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional
@@ -289,4 +290,98 @@ def extract_text_fields(obj: dict) -> dict:
         "id": obj.get("id"),
         "name": (obj.get("name") or "").strip(),
         "description": (obj.get("description") or "").strip(),
+    }
+
+
+# ---------------------------------------------------------------------- #
+# Extracao estruturada de tooltip de skill (Opcao B)
+# ---------------------------------------------------------------------- #
+# Regex para remover marcacao tipo HTML embutida nos rotulos de facts, ex.:
+# '<c=@abilitytype>Field Damage</c>' -> 'Field Damage'.
+_MARKUP_RE = re.compile(r"<[^>]*>")
+
+# Campos de valor de um fact que precisamos preservar para a reconstrucao do
+# tooltip. NAO incluem 'icon' (URLs sao descartadas de proposito).
+_FACT_VALUE_FIELDS = (
+    "value",
+    "duration",
+    "distance",
+    "percent",
+    "hit_count",
+    "dmg_multiplier",
+    "apply_count",
+    "field_type",
+    "finisher_type",
+    "target",
+)
+
+
+def strip_markup(s: str) -> str:
+    """Remove marcacao tipo HTML ('<...>') de uma string, mantendo o texto interno.
+
+    Ex.: '<c=@abilitytype>Field Damage</c>' -> 'Field Damage'. Puro/sem rede,
+    usado pelos self-checks do --dry-run. Aceita None (retorna '').
+    """
+    if not s:
+        return ""
+    return _MARKUP_RE.sub("", str(s)).strip()
+
+
+def _normalize_fact(fact: dict) -> dict:
+    """Normaliza um fact bruto da API para a forma usada no tooltip.
+
+    Preserva o 'type' (verbatim, incluindo tipos nao listados como 'BuffArray'
+    ou string vazia), um rotulo 'text' limpo (sem marcacao), e todos os campos
+    de valor presentes. Buff/PrefixedBuff carregam status/description (limpos)
+    e, para PrefixedBuff, um dict 'prefix' aninhado. NUNCA inclui 'icon'.
+    """
+    fact = fact or {}
+    out: dict = {
+        # 'type' mantido verbatim; ausente vira string vazia (tipo desconhecido).
+        "type": fact.get("type", "") if fact.get("type") is not None else "",
+        "text": strip_markup(fact.get("text")),
+    }
+    for key in _FACT_VALUE_FIELDS:
+        if key in fact and fact[key] is not None:
+            out[key] = fact[key]
+
+    # Buff/PrefixedBuff: a informacao util esta em status/description.
+    if fact.get("status") is not None:
+        out["status"] = strip_markup(fact.get("status"))
+    if fact.get("description") is not None:
+        out["description"] = strip_markup(fact.get("description"))
+
+    # PrefixedBuff: prefixo aninhado com seu proprio status/description.
+    prefix = fact.get("prefix")
+    if isinstance(prefix, dict):
+        out["prefix"] = {
+            "text": strip_markup(prefix.get("text")),
+            "status": strip_markup(prefix.get("status")),
+            "description": strip_markup(prefix.get("description")),
+        }
+
+    return out
+
+
+def extract_skill_tooltip(obj: dict) -> dict:
+    """Extrai o objeto de skill estruturado necessario para reconstruir o tooltip.
+
+    Retorna {id, name, type, description, flags (list[str]), categories (list[str]),
+    facts (list[dict])}. Cada fact e normalizado por _normalize_fact: 'type'
+    verbatim (tipos desconhecidos preservados), rotulo 'text' sem marcacao, e
+    todos os campos de valor presentes. Nenhuma URL de 'icon' e mantida.
+    """
+    obj = obj or {}
+    facts_in = obj.get("facts") or []
+    facts = [_normalize_fact(f) for f in facts_in if isinstance(f, dict)]
+    flags = [str(x) for x in (obj.get("flags") or [])]
+    categories = [str(x) for x in (obj.get("categories") or [])]
+    return {
+        "id": obj.get("id"),
+        "name": (obj.get("name") or "").strip(),
+        "type": (obj.get("type") or "").strip(),
+        "description": (obj.get("description") or "").strip(),
+        "flags": flags,
+        "categories": categories,
+        "facts": facts,
     }

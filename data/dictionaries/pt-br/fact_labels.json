@@ -1,0 +1,487 @@
+{
+    "locale": "pt-br",
+    "category": "fact_labels",
+    "version": "1.0.0",
+    "entries": [
+        {
+            "en": "Range",
+            "translated": "Alcance"
+        },
+        {
+            "en": "Damage",
+            "translated": "Dano"
+        },
+        {
+            "en": "Number of Targets",
+            "translated": "Número de Alvos"
+        },
+        {
+            "en": "Radius",
+            "translated": "Raio"
+        },
+        {
+            "en": "Combo Field",
+            "translated": "Campo de Combo"
+        },
+        {
+            "en": "Combo Finisher",
+            "translated": "Finalizador de Combo"
+        },
+        {
+            "en": "Apply Buff/Condition",
+            "translated": "Apply Buff/Condition"
+        },
+        {
+            "en": "Healing",
+            "translated": "Cura"
+        },
+        {
+            "en": "Initiative Gain",
+            "translated": "Initiative Gain"
+        },
+        {
+            "en": "Recharge",
+            "translated": "Recarga"
+        },
+        {
+            "en": "Conditions Removed",
+            "translated": "Conditions Removed"
+        },
+        {
+            "en": "Interval",
+            "translated": "Interval"
+        },
+        {
+            "en": "Duration",
+            "translated": "Duração"
+        },
+        {
+            "en": "Unblockable",
+            "translated": "Unblockable"
+        },
+        {
+            "en": "Number of Attacks",
+            "translated": "Number of Attacks"
+        },
+        {
+            "en": "Reflects Missiles",
+            "translated": "Reflects Missiles"
+        },
+        {
+            "en": "Glue Puddle Duration",
+            "translated": "Glue Puddle Duration"
+        },
+        {
+            "en": "Field Duration",
+            "translated": "Field Duration"
+        },
+        {
+            "en": "Daze",
+            "translated": "Tontura"
+        },
+        {
+            "en": "Minimum Damage",
+            "translated": "Minimum Damage"
+        },
+        {
+            "en": "Damage Reduction per Hit",
+            "translated": "Damage Reduction per Hit"
+        },
+        {
+            "en": "Impact Radius",
+            "translated": "Impact Radius"
+        },
+        {
+            "en": "Number of Impacts",
+            "translated": "Number of Impacts"
+        },
+        {
+            "en": "Healing per Cast",
+            "translated": "Healing per Cast"
+        },
+        {
+            "en": "Channel Duration",
+            "translated": "Channel Duration"
+        },
+        {
+            "en": "StunBreak",
+            "translated": "StunBreak"
+        },
+        {
+            "en": "Pulses",
+            "translated": "Pulsos"
+        },
+        {
+            "en": "Endurance Gained",
+            "translated": "Endurance Gained"
+        },
+        {
+            "en": "Secondary Strike",
+            "translated": "Secondary Strike"
+        },
+        {
+            "en": "First-Hit Healing",
+            "translated": "First-Hit Healing"
+        },
+        {
+            "en": "Additional-Hit Healing",
+            "translated": "Additional-Hit Healing"
+        },
+        {
+            "en": "Maximum Count",
+            "translated": "Maximum Count"
+        },
+        {
+            "en": "Count Recharge",
+            "translated": "Recarga de Carga"
+        },
+        {
+            "en": "Damage Increase",
+            "translated": "Damage Increase"
+        },
+        {
+            "en": "Fire Wall Damage",
+            "translated": "Fire Wall Damage"
+        },
+        {
+            "en": "Fire Wall Duration",
+            "translated": "Fire Wall Duration"
+        },
+        {
+            "en": "Number of Bounces",
+            "translated": "Number of Bounces"
+        },
+        {
+            "en": "Prevents Capture-Point Contribution",
+            "translated": "Prevents Capture-Point Contribution"
+        },
+        {
+            "en": "Initial Damage",
+            "translated": "Initial Damage"
+        },
+        {
+            "en": "Final Impact Damage",
+            "translated": "Final Impact Damage"
+        },
+        {
+            "en": "Initial Radius",
+            "translated": "Initial Radius"
+        },
+        {
+            "en": "Final Impact",
+            "translated": "Final Impact"
+        },
+        {
+            "en": "Blocks Missiles",
+            "translated": "Blocks Missiles"
+        },
+        {
+            "en": "Stage 1 Damage",
+            "translated": "Stage 1 Damage"
+        },
+        {
+            "en": "Stage 2 Damage",
+            "translated": "Stage 2 Damage"
+        },
+        {
+            "en": "Stage 3 Damage",
+            "translated": "Stage 3 Damage"
+        },
+        {
+            "en": "Stun",
+            "translated": "Atordoamento"
+        },
+        {
+            "en": "Number of Casts",
+            "translated": "Number of Casts"
+        },
+        {
+            "en": "Pierces",
+            "translated": "Pierces"
+        },
+        {
+            "en": "Launch",
+            "translated": "Launch"
+        },
+        {
+            "en": "Stability and Damage Pulse",
+            "translated": "Stability and Damage Pulse"
+        },
+        {
+            "en": "Boon Application Interval",
+            "translated": "Boon Application Interval"
+        },
+        {
+            "en": "Heal per Condition",
+            "translated": "Heal per Condition"
+        },
+        {
+            "en": "Knockback",
+            "translated": "Knockback"
+        },
+        {
+            "en": "Movement Speed Increase",
+            "translated": "Movement Speed Increase"
+        },
+        {
+            "en": "Reflection Duration",
+            "translated": "Reflection Duration"
+        },
+        {
+            "en": "Damage vs. Burning",
+            "translated": "Damage vs. Burning"
+        },
+        {
+            "en": "Spike Maximum Targets",
+            "translated": "Spike Maximum Targets"
+        },
+        {
+            "en": "Final Strike Maximum Targets",
+            "translated": "Final Strike Maximum Targets"
+        },
+        {
+            "en": "Spike Radius",
+            "translated": "Spike Radius"
+        },
+        {
+            "en": "Knockdown",
+            "translated": "Knockdown"
+        },
+        {
+            "en": "Increased Arrows per Water Arrow Stack",
+            "translated": "Increased Arrows per Water Arrow Stack"
+        },
+        {
+            "en": "Condition Duration Reduction",
+            "translated": "Condition Duration Reduction"
+        },
+        {
+            "en": "Revive Percentage",
+            "translated": "Revive Percentage"
+        },
+        {
+            "en": "Breaks Stun",
+            "translated": "Breaks Stun"
+        },
+        {
+            "en": "Maximum Stacks",
+            "translated": "Maximum Stacks"
+        },
+        {
+            "en": "Number of Allied Targets",
+            "translated": "Number of Allied Targets"
+        },
+        {
+            "en": "Explosion Damage",
+            "translated": "Explosion Damage"
+        },
+        {
+            "en": "Explosion Radius",
+            "translated": "Explosion Radius"
+        },
+        {
+            "en": "Damage Pulse",
+            "translated": "Damage Pulse"
+        },
+        {
+            "en": "Boon Gain Interval",
+            "translated": "Boon Gain Interval"
+        },
+        {
+            "en": "Pull",
+            "translated": "Pull"
+        },
+        {
+            "en": "Projectile Dmg",
+            "translated": "Projectile Dmg"
+        },
+        {
+            "en": "Detonation Damage",
+            "translated": "Detonation Damage"
+        },
+        {
+            "en": "Maximum Damage",
+            "translated": "Maximum Damage"
+        },
+        {
+            "en": "Base Damage",
+            "translated": "Base Damage"
+        },
+        {
+            "en": "Recharge reduced to",
+            "translated": "Recharge reduced to"
+        },
+        {
+            "en": "Maximum Boon Scaling",
+            "translated": "Maximum Boon Scaling"
+        },
+        {
+            "en": "Barrier per Boon",
+            "translated": "Barrier per Boon"
+        },
+        {
+            "en": "Blast Damage",
+            "translated": "Blast Damage"
+        },
+        {
+            "en": "Blast Radius",
+            "translated": "Blast Radius"
+        },
+        {
+            "en": "Delay",
+            "translated": "Delay"
+        },
+        {
+            "en": "Float",
+            "translated": "Float"
+        },
+        {
+            "en": "Sink",
+            "translated": "Sink"
+        },
+        {
+            "en": "Ring of Fire Duration",
+            "translated": "Ring of Fire Duration"
+        },
+        {
+            "en": "Barrier",
+            "translated": "Barrier"
+        },
+        {
+            "en": "Damage increase per stack.",
+            "translated": "Damage increase per stack."
+        },
+        {
+            "en": "Duration Increase per Water Arrow Stack",
+            "translated": "Duration Increase per Water Arrow Stack"
+        },
+        {
+            "en": "Bonus Impact per Stack of Water Arrow",
+            "translated": "Bonus Impact per Stack of Water Arrow"
+        },
+        {
+            "en": "Revive Targets",
+            "translated": "Revive Targets"
+        },
+        {
+            "en": "Number of Grenades",
+            "translated": "Number of Grenades"
+        },
+        {
+            "en": "Explosion",
+            "translated": "Explosion"
+        },
+        {
+            "en": "Fuse Time",
+            "translated": "Fuse Time"
+        },
+        {
+            "en": "Rate of Fire",
+            "translated": "Rate of Fire"
+        },
+        {
+            "en": "Attack Range",
+            "translated": "Attack Range"
+        },
+        {
+            "en": "Overcharge Cooldown",
+            "translated": "Overcharge Cooldown"
+        },
+        {
+            "en": "Duration Increase",
+            "translated": "Duration Increase"
+        },
+        {
+            "en": "Oil Slick Duration",
+            "translated": "Oil Slick Duration"
+        },
+        {
+            "en": "Number of Hits per Target",
+            "translated": "Number of Hits per Target"
+        },
+        {
+            "en": "Conditions Converted to Boons",
+            "translated": "Conditions Converted to Boons"
+        },
+        {
+            "en": "Revive Percent per Pulse",
+            "translated": "Revive Percent per Pulse"
+        },
+        {
+            "en": "Rate of Fire Increase",
+            "translated": "Rate of Fire Increase"
+        },
+        {
+            "en": "Rocket Distance",
+            "translated": "Rocket Distance"
+        },
+        {
+            "en": "Attacks per Second",
+            "translated": "Attacks per Second"
+        },
+        {
+            "en": "Knockback Distance",
+            "translated": "Knockback Distance"
+        },
+        {
+            "en": "Distance",
+            "translated": "Distância"
+        },
+        {
+            "en": "Impact Heal",
+            "translated": "Impact Heal"
+        },
+        {
+            "en": "Pulse Heal",
+            "translated": "Pulse Heal"
+        },
+        {
+            "en": "Initial Self Conditions Removed",
+            "translated": "Initial Self Conditions Removed"
+        },
+        {
+            "en": "Turret Heal Percent",
+            "translated": "Turret Heal Percent"
+        },
+        {
+            "en": "Box of Nails Duration",
+            "translated": "Box of Nails Duration"
+        },
+        {
+            "en": "Leap Damage",
+            "translated": "Leap Damage"
+        },
+        {
+            "en": "Landing Damage",
+            "translated": "Landing Damage"
+        },
+        {
+            "en": "Block Duration",
+            "translated": "Block Duration"
+        },
+        {
+            "en": "Timer",
+            "translated": "Timer"
+        },
+        {
+            "en": "Boon Radius",
+            "translated": "Boon Radius"
+        },
+        {
+            "en": "Foe Launch Distance",
+            "translated": "Foe Launch Distance"
+        },
+        {
+            "en": "Proximity Radius",
+            "translated": "Proximity Radius"
+        },
+        {
+            "en": "Boons Removed",
+            "translated": "Boons Removed"
+        },
+        {
+            "en": "Damage per Mine",
+            "translated": "Damage per Mine"
+        }
+    ]
+}
